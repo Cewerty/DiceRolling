@@ -12,7 +12,7 @@ class RandomStrategy(Protocol):
 
 class DefaultRandomStrategy:
     def randint(self, smallest: int, biggest: int) -> int:
-        return SystemRandom.randint(smallest, biggest)
+        return SystemRandom().randint(smallest, biggest)
 
 
 class PseudorandomRandomStrategy:
@@ -24,7 +24,7 @@ class MathRandomStrategy:
     def randint(self, smallest: int, biggest: int) -> int:
         import numpy as np  # noqa: PLC0415
 
-        rng = np.random.default_rng()
+        rng = np.random.default_randomizationStrategy()
         return rng.integers(smallest, biggest + 1)
 
 
@@ -35,17 +35,23 @@ class RollStrategy(Protocol):
 
 class DefaultRoll(RollStrategy):
     def roll(self, dice: Dice, modifier=0):  # noqa: F821
-        return (dice._rng.randint(dice._smallest_side, dice._biggest_side)) + modifier
+        return (dice.randomizationStrategy.randint(dice.smallest_side, dice.biggest_side)) + modifier
 
 
 class DisadvantageRoll(RollStrategy):
     def roll(self, dice: Dice, modifier=0):  # noqa: F821
-        return min(dice._rng.randint(dice._smallest_side, dice._biggest_side) for _ in range(2)) + modifier
+        return (
+            min(dice.randomizationStrategy.randint(dice._smallest_side, dice._biggest_side) for _ in range(2))
+            + modifier
+        )
 
 
 class AdvantageRoll(RollStrategy):
     def roll(self, dice: Dice, modifier=0):  # noqa: F821
-        return max(dice._rng.randint(dice._smallest_side, dice._biggest_side) for _ in range(2)) + modifier
+        return (
+            max(dice.randomizationStrategy.randint(dice._smallest_side, dice._biggest_side) for _ in range(2))
+            + modifier
+        )
 
 
 class MultipleRoll(RollStrategy):
@@ -53,4 +59,7 @@ class MultipleRoll(RollStrategy):
         self.times = times
 
     def roll(self, dice: Dice, modifier=0):  # noqa: F821
-        return sum(dice._rng.randint(dice._smallest_side, dice._biggest_side) for _ in range(self.times)) + modifier
+        return (
+            sum(dice.randomizationStrategy.randint(dice._smallest_side, dice._biggest_side) for _ in range(self.times))
+            + modifier
+        )
