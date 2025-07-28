@@ -1,3 +1,4 @@
+import random
 from abc import abstractmethod
 from typing import Protocol
 
@@ -6,6 +7,19 @@ from dice import Dice
 
 class RandomStrategy(Protocol):
     def randint(self, smallest: int, biggest: int) -> int: ...
+
+
+class PseudorandomRandomStrategy:
+    def randint(self, smallest: int, biggest: int) -> int:
+        return random.randint(smallest, biggest)
+
+
+class MathRandomStrategy:
+    def randint(self, smallest: int, biggest: int) -> int:
+        import numpy as np  # noqa: PLC0415
+
+        rng = np.random.default_rng()
+        return rng.integers(smallest, biggest + 1)
 
 
 class RollStrategy(Protocol):
@@ -34,8 +48,3 @@ class MultipleRoll(RollStrategy):
 
     def roll(self, dice: Dice, modifier=0):
         return sum(dice._rng.randint(dice._smallest_side, dice._biggest_side) for _ in range(self.times)) + modifier
-
-
-class FlexibleMultipleRoll(RollStrategy):
-    def roll(self, dice: Dice, modifier=0, times: int = 1):
-        return sum(dice._rng.randint(dice._smallest_side, dice._biggest_side) for _ in range(times)) + modifier
