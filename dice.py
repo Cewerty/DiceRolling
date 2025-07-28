@@ -19,7 +19,7 @@ class Dice(ABC):
     _randomizationStrategy: RandomStrategy = field(default_factory=DefaultRandomStrategy)
     _rollStrategy: RollStrategy = field(default_factory=DefaultRoll)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not (
             (self._smallest_side >= 0)
             and ((self._smallest_side != self._biggest_side) or (self._smallest_side > self._biggest_side))
@@ -27,11 +27,11 @@ class Dice(ABC):
             return ValueError("Not correct sides value!")
 
     @property
-    def smallest_side(self):
+    def smallest_side(self) -> int:
         return self._smallest_side
 
     @property
-    def biggest_side(self):
+    def biggest_side(self) -> int:
         return self._biggest_side
 
     @property
@@ -39,11 +39,11 @@ class Dice(ABC):
         return self._randomizationStrategy
 
     @property
-    def rollStrategy(self):
+    def rollStrategy(self) -> RollStrategy:
         return self._rollStrategy
 
     @rollStrategy.setter
-    def rollStrategy(self, newRollStrategy: RollStrategy):
+    def rollStrategy(self, newRollStrategy: RollStrategy) -> None:
         self._rollStrategy = newRollStrategy
 
     def check_success(self, check: int) -> bool:
@@ -55,9 +55,9 @@ class Dice(ABC):
 
 class AbstractDiceFabric(Protocol):
     @abstractmethod
-    def get_randomizationStrategy(self): ...
+    def get_randomizationStrategy(self) -> RandomStrategy: ...
 
-    def create_dice_set(self) -> dict:
+    def create_dice_set(self) -> dict[str: Dice]:
         return {
             "d4": self.create_d4(),
             "d6": self.create_d6(),
@@ -67,41 +67,41 @@ class AbstractDiceFabric(Protocol):
             "d20": self.create_d20(),
         }
 
-    def create_d4(self):
+    def create_d4(self) -> Dice:
         return Dice(1, 4, self.get_randomizationStrategy())
 
-    def create_d6(self):
+    def create_d6(self) -> Dice:
         return Dice(1, 6, self.get_randomizationStrategy())
 
-    def create_d8(self):
+    def create_d8(self) -> Dice:
         return Dice(1, 8, self.get_randomizationStrategy())
 
-    def create_d10(self):
+    def create_d10(self) -> Dice:
         return Dice(0, 9, self.get_randomizationStrategy())
 
-    def create_d12(self):
+    def create_d12(self) -> Dice:
         return Dice(1, 12, self.get_randomizationStrategy())
 
-    def create_d20(self):
+    def create_d20(self) -> Dice:
         return Dice(1, 20, self.get_randomizationStrategy())
 
 
 class PseudorandomDiceFabric(AbstractDiceFabric):
-    def get_randomizationStrategy(self):
+    def get_randomizationStrategy(self) -> PseudorandomRandomStrategy:
         if not hasattr(self, "_randomizationStrategy"):
             self._randomizationStrategy = PseudorandomRandomStrategy()
         return self._randomizationStrategy
 
 
 class DefaultDiceFabric(AbstractDiceFabric):
-    def get_randomizationStrategy(self):
+    def get_randomizationStrategy(self) -> DefaultRandomStrategy:
         if not hasattr(self, "_randomizationStrategy"):
             self._randomizationStrategy = DefaultRandomStrategy()
         return self._randomizationStrategy
 
 
 class MathematicalDiceFabric(AbstractDiceFabric):
-    def get_randomizationStrategy(self):
+    def get_randomizationStrategy(self) -> MathRandomStrategy:
         if not hasattr(self, "_randomizationStrategy"):
             self._randomizationStrategy = MathRandomStrategy()
         return self._randomizationStrategy

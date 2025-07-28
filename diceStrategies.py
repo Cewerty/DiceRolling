@@ -34,12 +34,12 @@ class RollStrategy(Protocol):
 
 
 class DefaultRoll(RollStrategy):
-    def roll(self, dice: Dice, modifier=0):  # noqa: F821
+    def roll(self, dice: Dice, modifier=0) -> int:  # noqa: F821
         return (dice.randomizationStrategy.randint(dice.smallest_side, dice.biggest_side)) + modifier
 
 
 class DisadvantageRoll(RollStrategy):
-    def roll(self, dice: Dice, modifier=0):  # noqa: F821
+    def roll(self, dice: Dice, modifier=0) -> int:  # noqa: F821
         return (
             min(dice.randomizationStrategy.randint(dice._smallest_side, dice._biggest_side) for _ in range(2))
             + modifier
@@ -47,7 +47,7 @@ class DisadvantageRoll(RollStrategy):
 
 
 class AdvantageRoll(RollStrategy):
-    def roll(self, dice: Dice, modifier=0):  # noqa: F821
+    def roll(self, dice: Dice, modifier=0) -> int:  # noqa: F821
         return (
             max(dice.randomizationStrategy.randint(dice._smallest_side, dice._biggest_side) for _ in range(2))
             + modifier
@@ -55,10 +55,10 @@ class AdvantageRoll(RollStrategy):
 
 
 class MultipleRoll(RollStrategy):
-    def __init__(self, times: int = 1):
+    def __init__(self, times: int = 1) -> None:
         self.times = times
 
-    def roll(self, dice: Dice, modifier=0):  # noqa: F821
+    def roll(self, dice: Dice, modifier=0) -> int:  # noqa: F821
         return (
             sum(dice.randomizationStrategy.randint(dice._smallest_side, dice._biggest_side) for _ in range(self.times))
             + modifier
