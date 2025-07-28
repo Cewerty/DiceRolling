@@ -24,7 +24,7 @@ class MathRandomStrategy:
     def randint(self, smallest: int, biggest: int) -> int:
         import numpy as np  # noqa: PLC0415
 
-        rng = np.random.default_randomizationStrategy()
+        rng = np.random.default_rng()
         return rng.integers(smallest, biggest + 1)
 
 
