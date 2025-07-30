@@ -31,8 +31,10 @@ from __future__ import annotations
 
 import random
 from collections.abc import Generator
+from dataclasses import dataclass
 from secrets import SystemRandom
 from typing import TYPE_CHECKING, ClassVar, Protocol
+from weakref import WeakValueDictionary
 
 import numpy as np
 
@@ -197,11 +199,41 @@ class AdvantageRoll:
         return max(first_roll, second_roll) + modifier
 
 
+@dataclass(frozen=True, slots=True)
 class MultipleRoll:
     """Roll strategy for multiple dice with instance caching."""
 
-    __slots__: tuple = ("_times",)
-    _instances: ClassVar[dict[int, MultipleRoll]] = {}
+    times: int
+    _instances: ClassVar[WeakValueDictionary[int, MultipleRoll]] = WeakValueDictionary()
+
+    def __hash__(self) -> int:
+        """
+        Generate a hash value based on the number of rolls.
+
+        Returns:
+            Hash value of the times attribute
+
+        Note:
+            Supports usage in hashable collections (dicts, sets).
+        
+        """
+        return hash(self.times)
+
+    def __eq__(self, other: MultipleRoll) -> bool:
+        """
+        Compare instances for equality based on roll count.
+
+        Args:
+            other: Another instance to compare with
+
+        Returns:
+            True if both are MultipleRoll instances with same times value
+
+        Note:
+            Enables value-based comparison instead of instance identity.
+        
+        """
+        return isinstance(other, MultipleRoll) and other.times == self.times
 
     def __new__(cls, times: int = 1) -> MultipleRoll:
         """
@@ -218,26 +250,25 @@ class MultipleRoll:
             >>> b = MultipleRoll(3)
             >>> a is b
             True
-
+        
         """
-        if times not in cls._instances:
-            instance = super().__new__(cls)
-            cls._instances[times] = instance
-        return cls._instances[times]
+        if times in cls._instances:
+            return cls._instances[times]
+        self = super().__new__()
+        object.__setattr__(self, "_times", times)
+        cls._instances[times] = self
+        return self
 
-    def __init__(self, times: int = 1) -> None:
+    @classmethod
+    def clear_instances(cls) -> None:
         """
-        Initialize a multiple roll strategy.
-
-        Args:
-            times: Number of dice to roll
+        Clear all cached instances of the class.
 
         Note:
-            Only initializes the first time an instance is created for a given times value
-
+            Useful for resetting the instance cache during runtime.
+            
         """
-        if not hasattr(self, "_times"):
-            self._times = times
+        cls._instances.clear()
 
     @property
     def times(self) -> int:
@@ -246,7 +277,7 @@ class MultipleRoll:
 
         Returns:
             Number of dice (read-only)
-
+        
         """
         return self._times
 
@@ -267,7 +298,7 @@ class MultipleRoll:
             >>> result = strategy.roll(d6)
             >>> 3 <= result <= 18
             True
-
+        
         """
         return (
             sum(dice.randomization_strategy.randint(dice.smallest_side, dice.biggest_side) for _ in range(self.times))

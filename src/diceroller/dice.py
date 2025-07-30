@@ -1,15 +1,15 @@
 """
-Модуль содержащий логику, относящуюся к дайсам.
+Module containing dice-related logic.
 
 Contains:
-- Класс дайсов (Dice)
+- Dice class
 
-Пример использования:
+Example usage:
 >>> dice = Dice(1, 20)
 >>> dice.roll()
 15
 >>> dice.check_success(10)
-true
+True
 
 """
 
@@ -27,16 +27,16 @@ from .dice_strategies import (
 @dataclass(slots=True, frozen=True)
 class Dice:
     """
-    Класс для неизменяемых дайсов.
+    Class for immutable dice.
 
     Attributes:
-        _smallest_side (int): Наименьшая стороны дайса
-        _biggest_side (int):  Наибольшая стороны дайса
-        _randomization_strategy (RandomStrategy): Стратегия генерации случайных чисел
-        _roll_strategy (RollStrategy): Стратегия броска дайса
+        _smallest_side (int): Smallest side of the die
+        _biggest_side (int): Largest side of the die
+        _randomization_strategy (RandomStrategy): Random number generation strategy
+        _roll_strategy (RollStrategy): Dice rolling strategy
 
     Raises:
-        ValueError: При ситуации, когда наименьшая сторона больше наибольшей или меньше нуля
+        ValueError: If smallest side is larger than biggest side or negative
 
     """
 
@@ -47,28 +47,28 @@ class Dice:
 
     def __post_init__(self) -> None:
         """
-        Инициализирует проверку на корректность сторон дайса.
+        Initialize dice side validation.
 
         Raises:
-            ValueError: возвращается в тех случах, когда наименьшая сторона больше наибольшей или меньше нуля
+            ValueError: When smallest side is larger than biggest side or negative
 
         """
         if self.smallest_side >= self.biggest_side or self.smallest_side < 0:
             raise ValueError(
-                f"Incorrect sides: smallest_side ({self._smallest_side}) must be non-negative"
+                f"Incorrect sides: smallest_side ({self._smallest_side}) must be non-negative "
                 f"and less than biggest_side ({self._biggest_side})."
             )
 
     @property
     def smallest_side(self) -> int:
         """
-        Возвращает наименьшую сторону дайса.
+        Get the smallest side of the die.
 
         Returns:
-            int: Наименьшая сторона дайса (только для чтения)
+            int: Smallest side value (read-only)
 
         Note:
-            Значение устанавливается при создании экземпляра
+            Value is set during instance creation
 
         """
         return self._smallest_side
@@ -76,13 +76,13 @@ class Dice:
     @property
     def biggest_side(self) -> int:
         """
-        Возвращает наибольшую сторону дайса.
+        Get the largest side of the die.
 
         Returns:
-            int: Наибольшая стороная дайса (только для чтения)
+            int: Largest side value (read-only)
 
         Note:
-            Значение устанавливается при создании экземпляра
+            Value is set during instance creation
 
         """
         return self._biggest_side
@@ -90,13 +90,13 @@ class Dice:
     @property
     def randomization_strategy(self) -> RandomStrategy:
         """
-        Возвращает стратегию генерации случайных чисел.
+        Get the random number generation strategy.
 
         Returns:
-            RandomStrategy: Стратегия генерации случайных чисел
+            RandomStrategy: Randomization strategy instance
 
         Note:
-            Значение устанавливается при создании экземпляра
+            Value is set during instance creation
 
         """
         return self._randomization_strategy
@@ -104,24 +104,27 @@ class Dice:
     @property
     def roll_strategy(self) -> RollStrategy:
         """
-        Возвращает стратегию броска дайса.
+        Get the dice rolling strategy.
 
         Returns:
-            RollStrategy: стратегия броска дайса
+            RollStrategy: Roll strategy instance
+
+        Note:
+            Value is set during instance creation
 
         """
         return self._roll_strategy
 
     def check_success(self, check: int, inserted_roll_strategy: RollStrategy | None = None) -> bool:
         """
-        Проверяет успешность проходения проверки при броске кубика.
+        Check success against a target number.
 
         Args:
-            check (int): значение проверки
-            inserted_roll_strategy (RollStrategy | None, optional): стратегия для броска
+            check: Target number to beat
+            inserted_roll_strategy: Optional roll strategy override
 
         Returns:
-            bool: прохождение или провал проверки
+            bool: True if roll meets/exceeds target, False otherwise
 
         """
         return self.roll(inserted_roll_strategy=inserted_roll_strategy) >= check
@@ -132,14 +135,14 @@ class Dice:
         inserted_roll_strategy: RollStrategy | None = None,
     ) -> int:
         """
-        Выполняет бросок дайса с заданным модификатором.
+        Roll the die with optional modifier.
 
         Args:
-            inserted_roll_strategy (RollStrategy | None, optional): стратегия для броска. Defaults to None.
-            modifier (int, optional): модификатор броска. Defaults to 0.
+            modifier: Roll modifier to add
+            inserted_roll_strategy: Optional roll strategy override
 
         Returns:
-            int: значение броска
+            int: Final roll result
 
         """
         if inserted_roll_strategy is None:
