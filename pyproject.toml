@@ -1,14 +1,27 @@
+[build-system]
+requires = ["setuptools>=64.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "diceroller"
-version = "0.1.4"
-description = "Add your description here"
+version = "0.1.5"
+description = "Library for dice"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "mypy>=1.17.0",
+    "cmake>=4.0.3",
     "numpy>=2.3.2",
-    "ruff>=0.12.5",
+    "scikit-build>=0.18.1",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.17.0",
+    "ruff>=0.12.5",
+    "pytest>=7.0"  # Если нужны тесты
+]
+
+# Ваши текущие настройки Ruff остаются здесь
 [tool.ruff]
 exclude = [
     ".bzr",
