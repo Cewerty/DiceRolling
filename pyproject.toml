@@ -48,13 +48,14 @@ exclude = [
     "node_modules",
     "site-packages",
     "venv",
+    "test_*",
+    "hello.py",
 ]
 line-length = 120
 indent-width = 4
 
 [tool.ruff.lint]
 preview = true
-future-annotations = true
 select = [
         # pycodestyle
     "E",

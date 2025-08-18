@@ -31,7 +31,7 @@ from __future__ import annotations
 
 import random
 from collections.abc import Generator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from secrets import SystemRandom
 from typing import TYPE_CHECKING, ClassVar, Protocol
 from weakref import WeakValueDictionary
@@ -199,11 +199,10 @@ class AdvantageRoll:
         return max(first_roll, second_roll) + modifier
 
 
-@dataclass(frozen=True, slots=True)
 class MultipleRoll:
     """Roll strategy for multiple dice with instance caching."""
 
-    times: int
+    __slots__ = ("_times", "__weakref__")
     _instances: ClassVar[WeakValueDictionary[int, MultipleRoll]] = WeakValueDictionary()
 
     def __hash__(self) -> int:
@@ -254,10 +253,10 @@ class MultipleRoll:
         """
         if times in cls._instances:
             return cls._instances[times]
-        instance = super().__new__(cls)
-        object.__setattr__(instance, "_times", times)
-        cls._instances[times] = instance
-        return instance
+        self = object.__new__(cls)
+        object.__setattr__(self, "_times", times)
+        cls._instances[times] = self
+        return self
 
     @classmethod
     def clear_instances(cls) -> None:

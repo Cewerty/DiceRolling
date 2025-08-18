@@ -66,8 +66,8 @@ class Dice:
 
     """
 
-    _smallest_side: Final[int]
-    _biggest_side: Final[int]
+    _smallest_side: Final[int] = None
+    _biggest_side: Final[int] = None
     _randomization_strategy: Final[RandomStrategy] = field(default_factory=DefaultRandomStrategy)
     _roll_strategy: Final[RollStrategy] = field(default_factory=DefaultRoll)
 
