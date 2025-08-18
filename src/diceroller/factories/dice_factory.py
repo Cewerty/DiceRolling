@@ -141,7 +141,7 @@ class DiceFactory:
 
         """
         return self._make_dice(0, 9)
-    
+
     def d10(self) -> Dice:
         """
         Create a standard 10-sided die (d10).
