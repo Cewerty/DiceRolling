@@ -4,21 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "diceroller"
-version = "0.1.5"
-description = "Library for dice"
+version = "0.1.8"
+description = "Library for RPG's dice"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "cmake>=4.0.3",
     "numpy>=2.3.2",
-    "scikit-build>=0.18.1",
 ]
 
 [project.optional-dependencies]
 dev = [
     "mypy>=1.17.0",
     "ruff>=0.12.5",
-    "pytest>=7.0"  # Если нужны тесты
+    "pytest>=7.0"
 ]
 
 # Ваши текущие настройки Ruff остаются здесь

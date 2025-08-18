@@ -1,22 +1,48 @@
 """
-Module containing dice-related logic.
+Dice simulation module.
 
-Contains:
-- Dice class
+This module provides core functionality for dice-based probability simulations.
 
-Example usage:
->>> dice = Dice(1, 20)
->>> dice.roll()
-15
->>> dice.check_success(10)
-True
+Provides:
+    Dice: Class representing a physical die with configurable strategies
+
+Example:
+    Creating and rolling a standard D20::
+
+        >>> from dice import Dice
+        >>> d20 = Dice(1, 20)
+        >>> roll = d20.roll()
+        >>> 1 <= roll <= 20
+        True
+
+    Checking success against difficulty::
+
+        >>> d20.check_success(15)  # doctest: +SKIP
+        False
+
+Note:
+    Actual roll results are random. For reproducible documentation examples:
+    - Use fixed seed in tests
+    - Or mark with ``# doctest: +SKIP``
+
+Warning:
+    Creating dice with invalid sides (negative or min > max) raises ValueError
+
+Attributes:
+    __version__: Module version string
+    DEFAULT_SIDES: Default dice configuration (constant)
+
+Todo:
+    * Add serialization support
+    * Implement dice pool strategies
+    * Add operations support
 
 """
 
 from dataclasses import dataclass, field
 from typing import Final
 
-from .dice_strategies import (
+from .strategies import (
     DefaultRandomStrategy,
     DefaultRoll,
     RandomStrategy,

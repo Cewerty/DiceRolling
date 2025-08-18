@@ -21,8 +21,8 @@ Example:
 
 from typing import ClassVar
 
-from dice import Dice
-from diceStrategies import RandomStrategy
+from ..dice import Dice
+from ..strategies import RandomStrategy
 
 
 class DiceFactory:
@@ -45,7 +45,7 @@ class DiceFactory:
         "d4": [1, 4],
         "d6": [1, 6],
         "d8": [1, 8],
-        "d10": [0, 9],
+        "d10": [1, 10],
         "d12": [1, 12],
         "d20": [1, 20],
     }
@@ -129,7 +129,7 @@ class DiceFactory:
         """
         return self._make_dice(1, 8)
 
-    def d10(self) -> Dice:
+    def d10_percentages(self) -> Dice:
         """
         Create a standard 10-sided die (d10) with RPG-specific range.
 
@@ -141,6 +141,19 @@ class DiceFactory:
 
         """
         return self._make_dice(0, 9)
+    
+    def d10(self) -> Dice:
+        """
+        Create a standard 10-sided die (d10).
+
+        Returns:
+            Dice: 10-sided die (0-9)
+
+        Note:
+            Use this d10 for regular rolls in RPGs
+
+        """
+        return self._make_dice(1, 10)
 
     def d12(self) -> Dice:
         """
