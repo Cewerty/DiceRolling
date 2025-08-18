@@ -1,4 +1,5 @@
-def main():
+# noqa: D100
+def main() -> None:  # noqa: D103
     print("Hello from diceroller!")
 
 
