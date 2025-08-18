@@ -1,4 +1,4 @@
-PROJECT_NAME = diced
+PROJECT_NAME = diceroller
 SRC_DIR = src
 TESTS_DIR = tests
 
