@@ -1,0 +1,41 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 9 * * *'
+
+jobs:
+  quality-checks:
+    name: "Проверки качества"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "⏬ Забрать код"
+        uses: actions/checkout@v4
+        
+      - name: "🐍 Установить Python"
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          
+      - name: "📦 Установить зависимости"
+        run: |
+          pip install pre-commit ruff mypy pytest pytest-cov uv
+          make install-hooks
+          
+      - name: "🔍 Запустить pre-commit"
+        run: pre-commit run --all-files
+        
+      - name: "🚀 Запустить полную проверку"
+        run: make ci
+          
+      - name: "📝 Отправить уведомление"
+        if: ${{ always() }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const message = `♾️ Проверка завершена: ${{ job.status }}`;
+            console.log(message);
