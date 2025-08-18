@@ -1,0 +1,1 @@
+from diceroller import dice as dice

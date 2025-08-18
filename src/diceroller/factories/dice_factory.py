@@ -41,7 +41,7 @@ class DiceFactory:
 
     __slots__ = ("_randomStrategy",)
 
-    _TABLES: ClassVar[dict[str, [int, int]]] = {
+    _TABLES: ClassVar[dict[str: [int, int]]] = {
         "d4": [1, 4],
         "d6": [1, 6],
         "d8": [1, 8],
