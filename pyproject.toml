@@ -16,10 +16,11 @@ dependencies = [
 dev = [
     "mypy>=1.17.0",
     "ruff>=0.12.5",
-    "pytest>=7.0"
+    "pytest>=7.0",
+    "pre-commit>=4.3.0",
+    "makefile>=1.1.0",
 ]
 
-# Ваши текущие настройки Ruff остаются здесь
 [tool.ruff]
 exclude = [
     ".bzr",
