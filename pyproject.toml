@@ -11,6 +11,7 @@ description = "Library for TRPG's dices"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "uv>=0.8.14",
 ]
 
 [project.optional-dependencies]
