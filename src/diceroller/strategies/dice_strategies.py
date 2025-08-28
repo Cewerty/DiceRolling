@@ -178,8 +178,8 @@ class MultipleRoll:
 
     __slots__ = ("__weakref__", "_times")
     _instances: ClassVar[WeakValueDictionary[int, MultipleRoll]] = WeakValueDictionary()
-    _times: int 
-    
+    _times: int
+
     def __hash__(self) -> int:
         """
         Generate a hash value based on the number of rolls.
