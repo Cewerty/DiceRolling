@@ -22,6 +22,7 @@ dev = [
     "pre-commit>=4.3.0",
     "makefile>=1.1.0",
     "pytest-coverage>=0.0",
+    "setuptools>=80.9.0",
 ]
 
 [tool.setuptools.package-data]
