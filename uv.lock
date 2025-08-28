@@ -88,7 +88,7 @@ name = "diceroller"
 version = "0.2.4"
 source = { editable = "." }
 dependencies = [
-    { name = "uv" },
+    { name = "setuptools" },
 ]
 
 [package.optional-dependencies]
