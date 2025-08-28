@@ -19,9 +19,9 @@ format:
 	ruff format $(SRC_DIR) $(TESTS_DIR)
 
 typecheck:
-    @echo "🧪 Проверка типов..."
-    mypy $(SRC_DIR)
-    PYTHONPATH=$(SRC_DIR) mypy $(TESTS_DIR)
+	@echo "🧪 Проверка типов..."
+	mypy $(SRC_DIR)
+	PYTHONPATH=$(SRC_DIR) mypy $(TESTS_DIR)
 
 test:
 	@echo "🚀 Запуск тестов..."
