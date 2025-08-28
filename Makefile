@@ -29,7 +29,7 @@ test:
 
 build:
 	@echo "📦 Сборка пакета..."
-	uv build --no-isolation
+	uv build --no-build-isolation
 
 clean:
 	@echo "🧹 Очистка артефактов..."
