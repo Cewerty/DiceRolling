@@ -22,7 +22,7 @@ Example:
 from typing import ClassVar
 
 from ..dice import Dice
-from ..strategies import RandomStrategy
+from ..strategies import DefaultRandomStrategy, RandomStrategy
 
 
 class DiceFactory:
@@ -34,14 +34,16 @@ class DiceFactory:
     the same factory will share the same random number generation logic.
 
     Attributes:
-        _randomStrategy (RandomStrategy): Randomization strategy for dice rolls
+        _random_strategy (RandomStrategy): Randomization strategy for dice rolls
         _TABLES (ClassVar[dict]): Mapping of dice names to their side configurations
 
     """
 
-    __slots__ = ("_randomStrategy",)
+    __slots__ = ("_random_strategy",)
 
-    _TABLES: ClassVar[dict[str: [int, int]]] = {
+    _random_strategy: RandomStrategy
+
+    _TABLES: ClassVar[dict[str, list[int]]] = {
         "d4": [1, 4],
         "d6": [1, 6],
         "d8": [1, 8],
@@ -50,7 +52,7 @@ class DiceFactory:
         "d20": [1, 20],
     }
 
-    def __init__(self, random_strategy: RandomStrategy) -> None:
+    def __init__(self, random_strategy: RandomStrategy | type[RandomStrategy] | None = None) -> None:
         """
         Initialize the dice factory with a randomization strategy.
 
@@ -62,7 +64,12 @@ class DiceFactory:
             >>> factory = DiceFactory(DefaultRandomStrategy())
 
         """
-        self._randomStrategy: RandomStrategy = random_strategy
+        if random_strategy is None:
+            self._random_strategy = DefaultRandomStrategy()
+        elif isinstance(random_strategy, type):
+            self._random_strategy = random_strategy()
+        else:
+            self._random_strategy = random_strategy
 
     def _make_dice_set(self) -> dict[str, Dice]:
         """
@@ -97,7 +104,7 @@ class DiceFactory:
             Uses the factory's randomization strategy
 
         """
-        return Dice(smallest_side, biggest_side, self._randomStrategy)
+        return Dice(smallest_side, biggest_side, self._random_strategy)
 
     def d4(self) -> Dice:
         """
