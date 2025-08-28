@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "diceroller"
-version = "0.2.0"
+version = "0.2.3"
 description = "Library for TRPG's dices"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -93,4 +93,3 @@ exclude = ['test_*']
 
 [tool.ruff.format]
 docstring-code-format = true
-
