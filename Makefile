@@ -18,9 +18,16 @@ format:
 	@echo "🎨 Форматирование кода..."
 	ruff format $(SRC_DIR) $(TESTS_DIR)
 
+mypy-src:
+	mypy src/
+
+mypy-tests:
+	PYTHONPATH=src mypy tests/
+
 typecheck:
 	@echo "🧪 Проверка типов..."
-	mypy $(SRC_DIR) $(TESTS_DIR)
+	mypy-src
+	mypy-tests
 
 test:
 	@echo "🚀 Запуск тестов..."

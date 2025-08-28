@@ -2,9 +2,11 @@
 requires = ["setuptools>=64.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+
+
 [project]
 name = "diceroller"
-version = "0.1.8"
+version = "0.2.0"
 description = "Library for TRPG's dices"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -20,6 +22,9 @@ dev = [
     "pre-commit>=4.3.0",
     "makefile>=1.1.0",
 ]
+
+[tool.setuptools.package-data]
+diceroller = ["./src/diceroller/py.typed"]
 
 [tool.ruff]
 exclude = [
@@ -49,8 +54,8 @@ exclude = [
     "node_modules",
     "site-packages",
     "venv",
-    "test_*",
     "hello.py",
+    "docs"
 ]
 line-length = 120
 indent-width = 4
@@ -84,6 +89,8 @@ select = [
 fixable = ["ALL"]
 unfixable = []
 ignore = ["PLR6301", "TRY003", "D212", "D211", "RUF002", "D203"]
+exclude = ['test_*']
 
 [tool.ruff.format]
 docstring-code-format = true
+
