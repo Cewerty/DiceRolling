@@ -30,13 +30,9 @@ Example:
 from __future__ import annotations
 
 import random
-from collections.abc import Generator
-from dataclasses import dataclass, field
 from secrets import SystemRandom
 from typing import TYPE_CHECKING, ClassVar, Protocol
 from weakref import WeakValueDictionary
-
-import numpy as np
 
 if TYPE_CHECKING:
     from ..dice import Dice
@@ -100,28 +96,6 @@ class PseudoRandomStrategy:
 
         """
         return random.randint(smallest, biggest)  # noqa: S311
-
-
-class NumPyStrategy:
-    """Random number strategy using NumPy's Generator interface."""
-
-    def __init__(self) -> None:
-        """Initialize the strategy with NumPy's default random generator."""
-        self._rng: Generator = np.random.default_rng()
-
-    def randint(self, smallest: int, biggest: int) -> int:
-        """
-        Generate a random integer using NumPy's generator.
-
-        Args:
-            smallest: Lower bound (inclusive)
-            biggest: Upper bound (inclusive)
-
-        Returns:
-            Random integer in range [smallest, biggest]
-
-        """
-        return int(self._rng.integers(smallest, biggest + 1))
 
 
 class RollStrategy(Protocol):
@@ -202,9 +176,10 @@ class AdvantageRoll:
 class MultipleRoll:
     """Roll strategy for multiple dice with instance caching."""
 
-    __slots__ = ("_times", "__weakref__")
+    __slots__ = ("__weakref__", "_times")
     _instances: ClassVar[WeakValueDictionary[int, MultipleRoll]] = WeakValueDictionary()
-
+    _times: int 
+    
     def __hash__(self) -> int:
         """
         Generate a hash value based on the number of rolls.
@@ -218,7 +193,7 @@ class MultipleRoll:
         """
         return hash(self.times)
 
-    def __eq__(self, other: MultipleRoll) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Compare instances for equality based on roll count.
 
@@ -232,6 +207,8 @@ class MultipleRoll:
             Enables value-based comparison instead of instance identity.
 
         """
+        if not isinstance(other, MultipleRoll):
+            raise NotImplementedError
         return isinstance(other, MultipleRoll) and other.times == self.times
 
     def __new__(cls, times: int = 1) -> MultipleRoll:
