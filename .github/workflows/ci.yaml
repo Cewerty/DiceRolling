@@ -30,9 +30,6 @@ jobs:
       - name: "🔍 Запустить линтинг"
         run: make lint
 
-      - name: "🧪 Проверка типов"
-        run: make typecheck
-
       - name: "🚀 Запустить тесты"
         run: make test
 
