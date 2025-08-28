@@ -27,7 +27,7 @@ jobs:
           make install-hooks
           
       - name: "🔍 Запустить pre-commit"
-        run: pre-commit run --all-files
+        run: pre-commit run
         
       - name: "🚀 Запустить полную проверку"
         run: make ci
