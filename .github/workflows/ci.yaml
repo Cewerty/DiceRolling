@@ -15,23 +15,20 @@ jobs:
     steps:
       - name: "⏬ Забрать код"
         uses: actions/checkout@v4
-        
+
       - name: "🐍 Установить Python"
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
-          
+
       - name: "📦 Установить зависимости"
         run: |
           pip install pre-commit ruff mypy pytest pytest-cov uv
           make install-hooks
-          
-      - name: "🔍 Запустить pre-commit"
-        run: pre-commit run
-        
+
       - name: "🚀 Запустить полную проверку"
         run: make ci
-          
+
       - name: "📝 Отправить уведомление"
         if: ${{ always() }}
         uses: actions/github-script@v6
