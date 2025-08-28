@@ -9,8 +9,8 @@ on:
     - cron: '0 9 * * *'
 
 jobs:
-  quality-checks:
-    name: "Проверки качества"
+  lint:
+    name: "🔍 Линтинг и проверка типов"
     runs-on: ubuntu-latest
     steps:
       - name: "⏬ Забрать код"
@@ -21,18 +21,55 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: "📦 Установить зависимости"
-        run: |
-          pip install pre-commit ruff mypy pytest pytest-cov uv
-          make install-hooks
+      - name: "📦 Установить зависимости для линтинга"
+        run: pip install ruff mypy
 
-      - name: "🚀 Запустить полную проверку"
-        run: make ci
+      - name: "🚀 Запустить линтинг"
+        run: make lint
 
-      - name: "📝 Отправить уведомление"
-        if: ${{ always() }}
-        uses: actions/github-script@v6
+      - name: "🧪 Проверка типов"
+        run: make typecheck
+
+  test:
+    name: "🧪 Тестирование"
+    runs-on: ubuntu-latest
+    needs: lint  # Запускается только если lint прошел успешно
+    steps:
+      - name: "⏬ Забрать код"
+        uses: actions/checkout@v4
+
+      - name: "🐍 Установить Python"
+        uses: actions/setup-python@v4
         with:
-          script: |
-            const message = `♾️ Проверка завершена: ${{ job.status }}`;
-            console.log(message);
+          python-version: "3.11"
+
+      - name: "📦 Установить зависимости для тестов"
+        run: pip install pytest pytest-cov
+
+      - name: "🚀 Запустить тесты"
+        run: make test
+
+      - name: "📊 Отправить отчет о покрытии"
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+
+  build:
+    name: "📦 Сборка"
+    runs-on: ubuntu-latest
+    needs: test  # Запускается только если тесты прошли успешно
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: "⏬ Забрать код"
+        uses: actions/checkout@v4
+
+      - name: "🐍 Установить Python"
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: "📦 Установить uv"
+        run: pip install uv
+
+      - name: "🚀 Собрать пакет"
+        run: make build
