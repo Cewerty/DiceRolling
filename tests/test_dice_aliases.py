@@ -55,6 +55,7 @@ def test_d20() -> None:
         (0, 6, PseudoRandomStrategy(), MultipleRoll()),
         (0, 8, PseudoRandomStrategy(), AdvantageRoll()),
         (0, 10, PseudoRandomStrategy(), DisadvantageRoll()),
+        (0, 12, None, None),
     ],
 )
 def test_custom_dice(
