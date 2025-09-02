@@ -14,11 +14,9 @@ from src.diceroller.strategies import (
 from typing import TypeVar, Callable, Optional
 
 
-# Создаем TypeVar для фабричных функций Dice
 DiceFunction = TypeVar("DiceFunction", bound=Callable[..., Dice])
 
 
-# Теперь используем его в параметризованных тестах
 @pytest.mark.parametrize(
     "dice_factory,expected_min,expected_max",
     [
