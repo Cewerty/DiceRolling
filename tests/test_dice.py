@@ -49,7 +49,7 @@ def test_dice_valueError(smallest_side: int, biggest_side: int) -> None:
         (MultipleRoll(times=1)),
     ],
 )
-def test_dice_roll_with_inserted_strategy(inserted_strategy: RollStrategy, create_dice: Dice):
+def test_dice_roll_with_inserted_strategy(inserted_strategy: RollStrategy, create_dice: Dice) -> None:
     """
     Test that dice roll works correctly with various roll strategies.
 
@@ -63,7 +63,7 @@ def test_dice_roll_with_inserted_strategy(inserted_strategy: RollStrategy, creat
 
 
 @pytest.mark.parametrize("random_strategy", [(DefaultRandomStrategy()), (PseudoRandomStrategy())])
-def test_create_dice_with_different_random_strategies(random_strategy: RandomStrategy):
+def test_create_dice_with_different_random_strategies(random_strategy: RandomStrategy) -> None:
     """
     Test that Dice works correctly with different randomization strategies.
 

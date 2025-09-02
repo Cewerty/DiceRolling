@@ -90,7 +90,7 @@ select = [
 ]
 fixable = ["ALL"]
 unfixable = []
-ignore = ["PLR6301", "TRY003", "D212", "D211", "RUF002", "D203"]
+ignore = ["PLR6301", "TRY003", "D212", "D211", "RUF002", "D203", "PLC0414"]
 exclude = ['test_*']
 
 [tool.ruff.format]

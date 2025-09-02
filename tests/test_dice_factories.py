@@ -40,7 +40,9 @@ def test_create_dice_using_factory(smallest_side: int, biggest_side: int, create
     ],
     ids=["d4", "d6", "d8", "d10", "d10_percentages", "d12", "d20"],
 )
-def test_factory_methods(create_dice_factory: DiceFactory, factory_method: Callable, expected_range: Tuple[int, int]):
+def test_factory_methods(
+    create_dice_factory: DiceFactory, factory_method: Callable[[DiceFactory], Dice], expected_range: Tuple[int, int]
+) -> None:
     """
     Test all factory methods to ensure they create dice with correct ranges.
 
@@ -59,9 +61,9 @@ def test_factory_methods(create_dice_factory: DiceFactory, factory_method: Calla
     assert dice.biggest_side == max_val
 
 
-def test_creation_of_dice_factories_with_class():
+def test_creation_of_dice_factories_with_class() -> None:
     assert isinstance(DiceFactory(PseudoRandomStrategy), DiceFactory)
 
 
-def test_creation_of_dice_factories_with_object():
+def test_creation_of_dice_factories_with_object() -> None:
     assert isinstance(DiceFactory(PseudoRandomStrategy()), DiceFactory)
