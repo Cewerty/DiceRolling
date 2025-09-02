@@ -11,41 +11,49 @@ from src.diceroller.strategies import (
     PseudoRandomStrategy,
     DefaultRandomStrategy,
 )
+from typing import TypeVar, Callable, Optional
 
 
-def test_d4() -> None:
-    die: Dice = d4()
-    assert (die.smallest_side == 1 and die.biggest_side == 4) and (1 <= die.roll() <= 4)
+# Создаем TypeVar для фабричных функций Dice
+DiceFunction = TypeVar("DiceFunction", bound=Callable[..., Dice])
 
 
-def test_d6() -> None:
-    die: Dice = d6()
-    assert (die.smallest_side == 1 and die.biggest_side == 6) and (1 <= die.roll() <= 6)
-
-
-def test_d8() -> None:
-    die: Dice = d8()
-    assert (die.smallest_side == 1 and die.biggest_side == 8) and (1 <= die.roll() <= 8)
-
-
-def test_d10() -> None:
-    die: Dice = d10()
-    assert (die.smallest_side == 1 and die.biggest_side == 10) and (1 <= die.roll() <= 10)
-
-
-def test_d10_percentages() -> None:
-    die: Dice = d10_percentages()
-    assert (die.smallest_side == 0 and die.biggest_side == 9) and (0 <= die.roll() <= 9)
-
-
-def test_d12() -> None:
-    die: Dice = d12()
-    assert (die.smallest_side == 1 and die.biggest_side == 12) and (1 <= die.roll() <= 12)
-
-
-def test_d20() -> None:
-    die: Dice = d20()
-    assert (die.smallest_side == 1 and die.biggest_side == 20) and (1 <= die.roll() <= 20)
+# Теперь используем его в параметризованных тестах
+@pytest.mark.parametrize(
+    "dice_factory,expected_min,expected_max",
+    [
+        (d4, 1, 4),
+        (d6, 1, 6),
+        (d8, 1, 8),
+        (d10, 1, 10),
+        (d10_percentages, 0, 9),
+        (d12, 1, 12),
+        (d20, 1, 20),
+    ],
+)
+@pytest.mark.parametrize(
+    "roll_strategy,random_strategy",
+    [
+        (None, None),
+        (DefaultRoll(), DefaultRandomStrategy()),
+        (MultipleRoll(), PseudoRandomStrategy()),
+        (AdvantageRoll(), PseudoRandomStrategy()),
+        (DisadvantageRoll(), PseudoRandomStrategy()),
+    ],
+)
+def test_all_dice_factories(
+    dice_factory: DiceFunction,
+    expected_min: int,
+    expected_max: int,
+    roll_strategy: Optional[RollStrategy],
+    random_strategy: Optional[RandomStrategy],
+):
+    die = dice_factory(_random_strategy=random_strategy, _roll_strategy=roll_strategy)
+    assert die.smallest_side == expected_min
+    assert die.biggest_side == expected_max
+    assert isinstance(die, Dice)
+    roll_result = die.roll()
+    assert expected_min <= roll_result <= expected_max
 
 
 @pytest.mark.parametrize(
