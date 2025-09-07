@@ -86,8 +86,12 @@ wheels = [
 
 [[package]]
 name = "diceroller"
-version = "0.2.3"
+version = "0.2.5"
 source = { editable = "." }
+dependencies = [
+    { name = "mypy" },
+    { name = "pre-commit" },
+]
 
 [package.optional-dependencies]
 dev = [
@@ -104,7 +108,9 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "makefile", marker = "extra == 'dev'", specifier = ">=1.1.0" },
+    { name = "mypy", specifier = ">=1.17.1" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.17.0" },
+    { name = "pre-commit", specifier = ">=4.3.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.3.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0" },
     { name = "pytest-coverage", marker = "extra == 'dev'", specifier = ">=0.0" },
