@@ -292,7 +292,7 @@ class Dice:
         except Exception:
             return self
 
-    def __mul__(self, other: int | Dice) -> list[Dice]:
+    def __mul__(self, other: int | Dice) -> int:
         """
         Multiply the die by an integer to create multiple copies.
 
@@ -312,7 +312,7 @@ class Dice:
 
         """
         if isinstance(other, int):
-            return [deepcopy(self) for _ in range(other)]
+            return sum([self.roll() for _ in range(other)])
         else:
             raise TypeError(f"Cannot multiply Dice with {type(other)}")
 
