@@ -383,7 +383,7 @@ def adv(dices: Dice | Iterable[Dice]) -> int:
     for i, item in enumerate(dices):
         if not isinstance(item, Dice):
             raise TypeError(f"Item with index {i} does not implement the Dice interface.")
-    return max([die.roll() for _, die in enumerate(dices)])
+    return max(die.roll() for _, die in enumerate(dices))
 
 
 def dis(dices: Dice | Iterable[Dice]) -> int:
@@ -425,4 +425,4 @@ def dis(dices: Dice | Iterable[Dice]) -> int:
     for i, item in enumerate(dices):
         if not isinstance(item, Dice):
             raise TypeError(f"Item with index {i} does not implement the Dice interface.")
-    return min([die.roll() for _, die in enumerate(dices)])
+    return min(die.roll() for _, die in enumerate(dices))
