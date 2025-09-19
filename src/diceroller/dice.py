@@ -46,6 +46,7 @@ Todo:
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from copy import deepcopy
 from dataclasses import dataclass, field, replace
 from typing import Final
@@ -341,3 +342,87 @@ class Dice:
             return [deepcopy(self) for _ in range(other)]
         else:
             raise TypeError(f"Cannot multiply Dice with {type(other)}")
+
+
+def adv(dices: Dice | Iterable[Dice]) -> int:
+    """
+    Return the maximum roll result from a collection of dice.
+
+    This function accepts either a single dice object or a collection of dice objects,
+    rolls all dice, and returns the highest result obtained.
+
+    Args:
+    ----
+        dices: An object implementing the Dice interface, or an iterable collection
+               of such objects.
+
+    Returns:
+    -------
+        The highest value among all dice roll results.
+
+    Raises:
+    ------
+        TypeError: If the provided argument is not a dice object or iterable collection,
+                   or if any element in the collection doesn't implement the Dice interface.
+
+    Examples:
+    --------
+        >>> from diceroller.aliases import d6, d20
+        >>> adv(d6())  # Single dice
+        4
+        >>> adv([d6(), d6(), d6()])  # Multiple dice
+        6
+        >>> adv([d6(), d20()])  # Mixed dice types
+        18
+
+    """
+    if isinstance(dices, Dice):
+        return dices.roll()
+    elif not isinstance(dices, Iterable):
+        raise TypeError("Item does not implement the Dice interface.")
+    for i, item in enumerate(dices):
+        if not isinstance(item, Dice):
+            raise TypeError(f"Item with index {i} does not implement the Dice interface.")
+    return max([die.roll() for _, die in enumerate(dices)])
+
+
+def dis(dices: Dice | Iterable[Dice]) -> int:
+    """
+    Return the minimum roll result from a collection of dice.
+
+    This function accepts either a single dice object or a collection of dice objects,
+    rolls all dice, and returns the lowest result obtained.
+
+    Args:
+    ----
+        dices: An object implementing the Dice interface, or an iterable collection
+               of such objects.
+
+    Returns:
+    -------
+        The lowest value among all dice roll results.
+
+    Raises:
+    ------
+        TypeError: If the provided argument is not a dice object or iterable collection,
+                   or if any element in the collection doesn't implement the Dice interface.
+
+    Examples:
+    --------
+        >>> from diceroller.aliases import d6, d20
+        >>> dis(d6())  # Single dice
+        2
+        >>> dis([d6(), d6(), d6()])  # Multiple dice
+        1
+        >>> dis([d6(), d20()])  # Mixed dice types
+        3
+
+    """
+    if isinstance(dices, Dice):
+        return dices.roll()
+    elif not isinstance(dices, Iterable):
+        raise TypeError("Item does not implement the Dice interface.")
+    for i, item in enumerate(dices):
+        if not isinstance(item, Dice):
+            raise TypeError(f"Item with index {i} does not implement the Dice interface.")
+    return min([die.roll() for _, die in enumerate(dices)])

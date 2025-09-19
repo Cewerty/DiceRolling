@@ -6,14 +6,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "diceroller"
-version = "0.2.5"
+version = "0.2.6"
 description = "Library for TRPG's dices"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = [
-    "mypy>=1.17.1",
-    "pre-commit>=4.3.0",
-]
+dependencies = []
 
 [project.optional-dependencies]
 dev = [
@@ -22,9 +19,9 @@ dev = [
     "pytest>=7.0",
     "pre-commit>=4.3.0",
     "makefile>=1.1.0",
-    "pytest-coverage>=0.0",
     "setuptools>=80.9.0",
     "uv>=0.8.14",
+    "pytest-cov>=7.0.0",
 ]
 
 [tool.setuptools.package-data]
