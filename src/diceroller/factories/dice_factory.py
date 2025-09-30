@@ -9,6 +9,7 @@ Classes:
     DiceFactory: Factory class for creating RPG dice
 
 Example:
+-------
     >>> from dice_factory import DiceFactory
     >>> from diceStrategies import DefaultRandomStrategy
     >>> factory = DiceFactory(DefaultRandomStrategy())
@@ -33,7 +34,8 @@ class DiceFactory:
     using a consistent randomization strategy. All dice created by
     the same factory will share the same random number generation logic.
 
-    Attributes:
+    Attributes
+    ----------
         _random_strategy (RandomStrategy): Randomization strategy for dice rolls
         _TABLES (ClassVar[dict]): Mapping of dice names to their side configurations
 
@@ -57,9 +59,11 @@ class DiceFactory:
         Initialize the dice factory with a randomization strategy.
 
         Args:
+        ----
             random_strategy: Random number generation strategy for all dice
 
         Example:
+        -------
             >>> from diceStrategies import DefaultRandomStrategy
             >>> factory = DiceFactory(DefaultRandomStrategy())
 
@@ -76,9 +80,11 @@ class DiceFactory:
         Create a complete set of standard RPG dice.
 
         Returns:
+        -------
             Dictionary mapping dice names to Dice instances
 
         Example:
+        -------
             >>> factory = DiceFactory(DefaultRandomStrategy())
             >>> dice_set = factory._make_dice_set()
             >>> "d20" in dice_set
@@ -94,90 +100,17 @@ class DiceFactory:
         Create a single die with specified parameters.
 
         Args:
+        ----
             smallest_side: Smallest face value of the die
             biggest_side: Largest face value of the die
 
         Returns:
+        -------
             Configured Dice instance
 
         Note:
+        ----
             Uses the factory's randomization strategy
 
         """
         return Dice(smallest_side, biggest_side, self._random_strategy)
-
-    def d4(self) -> Dice:
-        """
-        Create a standard 4-sided die (d4).
-
-        Returns:
-            Dice: 4-sided die (1-4)
-
-        """
-        return self._make_dice(1, 4)
-
-    def d6(self) -> Dice:
-        """
-        Create a standard 6-sided die (d6).
-
-        Returns:
-            Dice: 6-sided die (1-6)
-
-        """
-        return self._make_dice(1, 6)
-
-    def d8(self) -> Dice:
-        """
-        Create a standard 8-sided die (d8).
-
-        Returns:
-            Dice: 8-sided die (1-8)
-
-        """
-        return self._make_dice(1, 8)
-
-    def d10_percentages(self) -> Dice:
-        """
-        Create a standard 10-sided die (d10) with RPG-specific range.
-
-        Returns:
-            Dice: 10-sided die (0-9)
-
-        Note:
-            Uses 0-9 range for compatibility with percentile dice systems in RPGs
-
-        """
-        return self._make_dice(0, 9)
-
-    def d10(self) -> Dice:
-        """
-        Create a standard 10-sided die (d10).
-
-        Returns:
-            Dice: 10-sided die (0-9)
-
-        Note:
-            Use this d10 for regular rolls in RPGs
-
-        """
-        return self._make_dice(1, 10)
-
-    def d12(self) -> Dice:
-        """
-        Create a standard 12-sided die (d12).
-
-        Returns:
-            Dice: 12-sided die (1-12)
-
-        """
-        return self._make_dice(1, 12)
-
-    def d20(self) -> Dice:
-        """
-        Create a standard 20-sided die (d20).
-
-        Returns:
-            Dice: 20-sided die (1-20)
-
-        """
-        return self._make_dice(1, 20)
