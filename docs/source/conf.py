@@ -9,7 +9,7 @@
 project = "diceroller"
 copyright = "2025, Cewerty"
 author = "Cewerty"
-release = "0.1.5"
+release = "0.2.7"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -26,7 +26,7 @@ napoleon_google_docstring = True
 napoleon_include_init_with_doc = True
 
 templates_path = ["_templates"]
-exclude_patterns = []
+exclude_patterns: list[str] = []
 
 
 # -- Options for HTML output -------------------------------------------------
