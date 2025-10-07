@@ -46,7 +46,7 @@ Todo:
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Generator, Iterable
 from copy import deepcopy
 from dataclasses import dataclass, field, replace
 from typing import Final
@@ -234,7 +234,7 @@ class Dice:
         else:
             raise TypeError(f"Cannot summarize Dice with {type(other)}")
 
-    def __radd__(self, other: int) -> int:
+    def __radd__(self, other: int | Dice) -> int:
         """
         Handle right-side addition for integer modifiers.
 
@@ -426,3 +426,45 @@ def dis(dices: Dice | Iterable[Dice]) -> int:
         if not isinstance(item, Dice):
             raise TypeError(f"Item with index {i} does not implement the Dice interface.")
     return min(die.roll() for _, die in enumerate(dices))
+
+
+def throws(dice: Dice, count: int = 1, roll_modificator: int = 0) -> Generator[int, None, None]:
+    """
+    Generate a sequence of dice roll results for a specified number of throws.
+
+    This function takes a single dice object, rolls it the specified number of times,
+    and yields each roll result with an optional modifier applied.
+
+    Args:
+    ----
+        dice: An object implementing the Dice interface, with a roll method.
+        count: The number of times to roll the dice (default: 1).
+        roll_modificator: An integer to add to each roll result (default: 0).
+
+    Yields:
+    ------
+        The result of each dice roll, with the modifier applied.
+
+    Raises:
+    ------
+        ValueError: If the count of throws is negative.
+        TypeError: If the provided dice argument does not implement the Dice interface.
+
+    Examples:
+    --------
+        >>> from diceroller.aliases import d6, d20
+        >>> list(throws(d6()))  # Single roll of a d6
+        [4]
+        >>> list(throws(d6(), count=3))  # Three rolls of a d6
+        [2, 5, 1]
+        >>> list(throws(d20(), count=2, roll_modificator=3))  # Two rolls of a d20 with +3 modifier
+        [15, 8]
+
+    """
+    if not isinstance(dice, Dice):
+        raise TypeError("Provided argument does not implement the Dice interface.")
+    if count < 0:
+        raise ValueError("Cannot roll a die a negative number of times.")
+    while count > 0:
+        yield dice.roll(modifier=roll_modificator)
+        count -= 1

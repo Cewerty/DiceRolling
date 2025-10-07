@@ -94,3 +94,8 @@ exclude = ['test_*']
 
 [tool.ruff.format]
 docstring-code-format = true
+
+[dependency-groups]
+dev = [
+    "rich>=14.1.0",
+]
