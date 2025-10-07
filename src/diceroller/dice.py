@@ -46,6 +46,8 @@ Todo:
 
 from __future__ import annotations
 
+import functools
+import operator
 from collections.abc import Generator, Iterable
 from copy import deepcopy
 from dataclasses import dataclass, field, replace
@@ -265,6 +267,93 @@ class Dice:
             return sum([self.roll(), other.roll()])
         else:
             raise TypeError(f"Cannot summarize Dice with {type(other)}")
+
+    def __sub__(self, other: int | Dice) -> int:
+        """
+        Subtract an integer or another dice roll from this dice's roll result.
+
+        This method allows subtraction of either an integer (as a modifier) from the
+        result of rolling this dice, or the roll result of another dice object from
+        this dice's roll result.
+
+        Args:
+        ----
+            self: The Dice object being rolled.
+            other: Either an integer to subtract from the roll result or another Dice
+                object whose roll result will be subtracted.
+
+        Returns:
+        -------
+            The result of subtracting either the integer or the other dice's roll
+            from this dice's roll.
+
+        Raises:
+        ------
+            TypeError: If the operand is neither an integer nor a Dice object.
+
+        Examples:
+        --------
+            >>> from diceroller.aliases import d6, d20
+            >>> d6_obj = d6()
+            >>> d6_obj - 2  # Subtract 2 from a d6 roll
+            3
+            >>> d6_obj - d6()  # Subtract one d6 roll from another
+            -1
+            >>> d20_obj = d20()
+            >>> d20_obj - d6()  # Subtract a d6 roll from a d20 roll
+            12
+
+        """
+        if isinstance(other, int):
+            return self.roll(modifier=-other)
+        elif isinstance(other, Dice):
+            return functools.reduce(operator.sub, [self.roll(), other.roll()])
+        else:
+            raise TypeError(f"Cannot subtract Dice with {type(other)}")
+
+    def __rsub__(self, other: int | Dice) -> int:
+        """
+        Subtract an integer or another dice roll from this dice's roll result.
+
+        This method allows subtraction where this dice object is the right operand,
+        such as an integer minus this dice's roll or another dice's roll minus this
+        dice's roll.
+
+        Args:
+        ----
+            self: The Dice object being rolled.
+            other: Either an integer from which this dice's roll result is subtracted,
+                or another Dice object whose roll result is used as the minuend.
+
+        Returns:
+        -------
+            The result of subtracting this dice's roll from either the integer or the
+            other dice's roll.
+
+        Raises:
+        ------
+            TypeError: If the operand is neither an integer nor a Dice object.
+
+        Examples:
+        --------
+            >>> from diceroller.aliases import d6, d20
+            >>> d6_obj = d6()
+            >>> 5 - d6_obj  # Subtract a d6 roll from 5
+            2
+            >>> d20_obj = d20()
+            >>> d20_obj - d6_obj  # Subtract a d6 roll from a d20 roll
+            12
+            >>> d6_obj2 = d6()
+            >>> d6_obj2 - d6_obj  # Subtract one d6 roll from another
+            -1
+
+        """
+        if isinstance(other, int):
+            return other - self.roll()
+        elif isinstance(other, Dice):
+            return other.roll() - self.roll()
+        else:
+            raise TypeError(f"Cannot subtract Dice with {type(other)}")
 
     def __deepcopy__(self, memo: dict[int, object]) -> Dice:
         """
