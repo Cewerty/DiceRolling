@@ -39,8 +39,7 @@ Attributes:
 Todo:
 ----
     * Add serialization support
-    * Implement dice pool strategies
-    * Add operations support
+    * Implement dice pool functionality
 
 """
 

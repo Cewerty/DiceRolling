@@ -9,7 +9,7 @@ from ...dice import Dice
 from ...strategies import DefaultRandomStrategy, DefaultRoll, RandomStrategy, RollStrategy
 
 
-class BaseDiceContextManager(AbstractContextManager, ABC):
+class BaseDiceContextManager(AbstractContextManager[Dice], ABC):
     """Base context manager for dice operations with strategy replacement."""
 
     def __init__(

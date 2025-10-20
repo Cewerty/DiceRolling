@@ -45,7 +45,7 @@ def test_all_dice_factories(
     expected_max: int,
     roll_strategy: Optional[RollStrategy],
     random_strategy: Optional[RandomStrategy],
-):
+) -> None:
     die = dice_factory(_random_strategy=random_strategy, _roll_strategy=roll_strategy)
     assert die.smallest_side == expected_min
     assert die.biggest_side == expected_max
