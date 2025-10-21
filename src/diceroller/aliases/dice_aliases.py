@@ -1,4 +1,5 @@
 """Factory method with basic dice partial preset."""
+
 from functools import partial
 
 from ..dice import Dice

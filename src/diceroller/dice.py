@@ -52,6 +52,13 @@ from copy import deepcopy
 from dataclasses import dataclass, field, replace
 from typing import Final
 
+from .exceptions import (
+    DiceInvalidSidesError,
+    DiceOperationTypeError,
+    InvalidDiceError,
+    InvalidDiceInputError,
+    NegativeThrowCountError,
+)
 from .strategies import (
     DefaultRandomStrategy,
     DefaultRoll,
@@ -93,7 +100,7 @@ class Dice:
 
         """
         if self.smallest_side >= self.biggest_side or self.smallest_side < 0:
-            raise ValueError(
+            raise DiceInvalidSidesError(
                 f"Incorrect sides: smallest_side ({self._smallest_side}) must be non-negative "
                 f"and less than biggest_side ({self._biggest_side})."
             )
@@ -217,7 +224,7 @@ class Dice:
 
         Raises:
         ------
-            TypeError: If other is neither int nor Dice
+            DiceOperationTypeError: If other is neither int nor Dice
 
         Example:
         -------
@@ -233,7 +240,7 @@ class Dice:
         elif isinstance(other, Dice):
             return sum([self.roll(), other.roll()])
         else:
-            raise TypeError(f"Cannot summarize Dice with {type(other)}")
+            raise DiceOperationTypeError(f"Cannot summarize Dice with {type(other)}")
 
     def __radd__(self, other: int | Dice) -> int:
         """
@@ -251,7 +258,7 @@ class Dice:
 
         Raises:
         ------
-            TypeError: If other is not an integer
+            DiceOperationTypeError: If other is not an integer
 
         Example:
         -------
@@ -265,7 +272,7 @@ class Dice:
         elif isinstance(other, Dice):
             return sum([self.roll(), other.roll()])
         else:
-            raise TypeError(f"Cannot summarize Dice with {type(other)}")
+            raise DiceOperationTypeError(f"Cannot summarize Dice with {type(other)}")
 
     def __sub__(self, other: int | Dice) -> int:
         """
@@ -288,7 +295,7 @@ class Dice:
 
         Raises:
         ------
-            TypeError: If the operand is neither an integer nor a Dice object.
+            DiceOperationTypeError: If the operand is neither an integer nor a Dice object.
 
         Examples:
         --------
@@ -308,7 +315,7 @@ class Dice:
         elif isinstance(other, Dice):
             return functools.reduce(operator.sub, [self.roll(), other.roll()])
         else:
-            raise TypeError(f"Cannot subtract Dice with {type(other)}")
+            raise DiceOperationTypeError(f"Cannot subtract Dice with {type(other)}")
 
     def __rsub__(self, other: int | Dice) -> int:
         """
@@ -331,7 +338,7 @@ class Dice:
 
         Raises:
         ------
-            TypeError: If the operand is neither an integer nor a Dice object.
+            DiceOperationTypeError: If the operand is neither an integer nor a Dice object.
 
         Examples:
         --------
@@ -352,7 +359,7 @@ class Dice:
         elif isinstance(other, Dice):
             return other.roll() - self.roll()
         else:
-            raise TypeError(f"Cannot subtract Dice with {type(other)}")
+            raise DiceOperationTypeError(f"Cannot subtract Dice with {type(other)}")
 
     def __deepcopy__(self, memo: dict[int, object]) -> Dice:
         """
@@ -403,7 +410,7 @@ class Dice:
         if isinstance(other, int):
             return sum([self.roll() for _ in range(other)])
         else:
-            raise TypeError(f"Cannot multiply Dice with {type(other)}")
+            raise DiceOperationTypeError(f"Cannot multiply Dice with {type(other)}")
 
     def __rmul__(self, other: int | Dice) -> list[Dice]:
         """
@@ -429,7 +436,7 @@ class Dice:
         if isinstance(other, int):
             return [deepcopy(self) for _ in range(other)]
         else:
-            raise TypeError(f"Cannot multiply Dice with {type(other)}")
+            raise DiceOperationTypeError(f"Cannot multiply Dice with {type(other)}")
 
 
 def adv(dices: Dice | Iterable[Dice]) -> int:
@@ -450,7 +457,7 @@ def adv(dices: Dice | Iterable[Dice]) -> int:
 
     Raises:
     ------
-        TypeError: If the provided argument is not a dice object or iterable collection,
+        DiceOperationTypeError: If the provided argument is not a dice object or iterable collection,
                    or if any element in the collection doesn't implement the Dice interface.
 
     Examples:
@@ -467,10 +474,10 @@ def adv(dices: Dice | Iterable[Dice]) -> int:
     if isinstance(dices, Dice):
         return max(dices.roll(), dices.roll())
     elif not isinstance(dices, Iterable):
-        raise TypeError("Item does not implement the Dice interface.")
+        raise InvalidDiceInputError("Item does not implement the Dice interface.")
     for i, item in enumerate(dices):
         if not isinstance(item, Dice):
-            raise TypeError(f"Item with index {i} does not implement the Dice interface.")
+            raise InvalidDiceInputError(f"Item with index {i} does not implement the Dice interface.")
     return max(die.roll() for _, die in enumerate(dices))
 
 
@@ -492,7 +499,7 @@ def dis(dices: Dice | Iterable[Dice]) -> int:
 
     Raises:
     ------
-        TypeError: If the provided argument is not a dice object or iterable collection,
+        DiceOperationTypeError: If the provided argument is not a dice object or iterable collection,
                    or if any element in the collection doesn't implement the Dice interface.
 
     Examples:
@@ -509,10 +516,10 @@ def dis(dices: Dice | Iterable[Dice]) -> int:
     if isinstance(dices, Dice):
         return min(dices.roll(), dices.roll())
     elif not isinstance(dices, Iterable):
-        raise TypeError("Item does not implement the Dice interface.")
+        raise DiceOperationTypeError("Item does not implement the Dice interface.")
     for i, item in enumerate(dices):
         if not isinstance(item, Dice):
-            raise TypeError(f"Item with index {i} does not implement the Dice interface.")
+            raise DiceOperationTypeError(f"Item with index {i} does not implement the Dice interface.")
     return min(die.roll() for _, die in enumerate(dices))
 
 
@@ -535,8 +542,8 @@ def throws(dice: Dice, count: int = 1, roll_modificator: int = 0) -> Generator[i
 
     Raises:
     ------
-        ValueError: If the count of throws is negative.
-        TypeError: If the provided dice argument does not implement the Dice interface.
+        NegativeThrowCountError: If the count of throws is negative.
+        InvalidDiceError: If the provided dice argument does not implement the Dice interface.
 
     Examples:
     --------
@@ -550,9 +557,9 @@ def throws(dice: Dice, count: int = 1, roll_modificator: int = 0) -> Generator[i
 
     """
     if not isinstance(dice, Dice):
-        raise TypeError("Provided argument does not implement the Dice interface.")
+        raise InvalidDiceError("Provided argument does not implement the Dice interface.")
     if count < 0:
-        raise ValueError("Cannot roll a die a negative number of times.")
+        raise NegativeThrowCountError("Cannot roll a die a negative number of times.")
     while count > 0:
         yield dice.roll(modifier=roll_modificator)
         count -= 1
