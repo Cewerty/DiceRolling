@@ -9,7 +9,7 @@ class DiceInvalidSidesError(ValueError):
 
     """
 
-    pass  # Can add custom __init__ later for more details if needed
+    pass
 
 
 class DiceOperationTypeError(TypeError):
