@@ -465,7 +465,7 @@ def adv(dices: Dice | Iterable[Dice]) -> int:
 
     """
     if isinstance(dices, Dice):
-        return dices.roll()
+        return max(dices.roll(), dices.roll())
     elif not isinstance(dices, Iterable):
         raise TypeError("Item does not implement the Dice interface.")
     for i, item in enumerate(dices):
@@ -507,7 +507,7 @@ def dis(dices: Dice | Iterable[Dice]) -> int:
 
     """
     if isinstance(dices, Dice):
-        return dices.roll()
+        return min(dices.roll(), dices.roll())
     elif not isinstance(dices, Iterable):
         raise TypeError("Item does not implement the Dice interface.")
     for i, item in enumerate(dices):
