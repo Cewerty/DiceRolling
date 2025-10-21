@@ -46,6 +46,7 @@ Todo:
 from __future__ import annotations
 
 import functools
+import heapq
 import operator
 from collections.abc import Generator, Iterable
 from copy import deepcopy
@@ -53,6 +54,7 @@ from dataclasses import dataclass, field, replace
 from typing import Final
 
 from .exceptions import (
+    DiceInvalidAmountError,
     DiceInvalidSidesError,
     DiceOperationTypeError,
     InvalidDiceError,
@@ -521,6 +523,90 @@ def dis(dices: Dice | Iterable[Dice]) -> int:
         if not isinstance(item, Dice):
             raise DiceOperationTypeError(f"Item with index {i} does not implement the Dice interface.")
     return min(die.roll() for _, die in enumerate(dices))
+
+
+def _to_dice_list(dices: Dice | list[Dice]) -> list[Dice]:
+    """Help to normalize input to list of Dice."""
+    if isinstance(dices, Dice):
+        return [dices]
+    if not isinstance(dices, list):
+        raise InvalidDiceInputError("Input must be a Dice or list of Dice.")
+    for i, item in enumerate(dices):
+        if not isinstance(item, Dice):
+            raise InvalidDiceInputError(f"Item at index {i} does not implement the Dice interface.")
+    return dices
+
+
+def kh(dices: Dice | list[Dice], keep: int) -> list[int]:
+    """
+    Keep the highest 'keep' rolls from the dice.
+
+    Returns sorted list of kept rolls (descending). Efficient for large sets using heap.
+    """
+    dice_list = _to_dice_list(dices)
+    n = len(dice_list)
+    if keep <= 0:
+        raise DiceInvalidAmountError(f"Cannot keep non-positive number of dice: {keep}")
+    if keep > n:
+        raise DiceInvalidAmountError(f"Cannot keep more dice than available: {keep} > {n}")
+    rolls = [die.roll() for die in dice_list]
+    return heapq.nlargest(keep, rolls)
+
+
+def kl(dices: Dice | list[Dice], keep: int) -> list[int]:
+    """
+    Keep the lowest 'keep' rolls from the dice.
+
+    Returns sorted list of kept rolls (ascending). Efficient for large sets using heap.
+    """
+    dice_list = _to_dice_list(dices)
+    n = len(dice_list)
+    if keep <= 0:
+        raise DiceInvalidAmountError(f"Cannot keep non-positive number of dice: {keep}")
+    if keep > n:
+        raise DiceInvalidAmountError(f"Cannot keep more dice than available: {keep} > {n}")
+    rolls = [die.roll() for die in dice_list]
+    return heapq.nsmallest(keep, rolls)
+
+
+def dh(dices: Dice | list[Dice], drop: int) -> list[int]:
+    """
+    Drop the highest 'drop' rolls from the dice (equivalent to keep lowest n-drop).
+
+    Returns sorted list of remaining rolls (ascending). Handles drop=0 (all rolls) and drop=n (empty).
+    """
+    dice_list = _to_dice_list(dices)
+    n = len(dice_list)
+    if drop < 0:
+        raise DiceInvalidAmountError(f"Cannot drop negative number of dice: {drop}")
+    if drop > n:
+        raise DiceInvalidAmountError(f"Cannot drop more dice than available: {drop} > {n}")
+    if drop == 0:
+        rolls = [die.roll() for die in dice_list]
+        return sorted(rolls)
+    keep = n - drop
+    rolls = [die.roll() for die in dice_list]
+    return heapq.nsmallest(keep, rolls)
+
+
+def dl(dices: Dice | list[Dice], drop: int) -> list[int]:
+    """
+    Drop the lowest 'drop' rolls from the dice (equivalent to keep highest n-drop).
+
+    Returns sorted list of remaining rolls (descending). Handles drop=0 (all rolls) and drop=n (empty).
+    """
+    dice_list = _to_dice_list(dices)
+    n = len(dice_list)
+    if drop < 0:
+        raise DiceInvalidAmountError(f"Cannot drop negative number of dice: {drop}")
+    if drop > n:
+        raise DiceInvalidAmountError(f"Cannot drop more dice than available: {drop} > {n}")
+    if drop == 0:
+        rolls = [die.roll() for die in dice_list]
+        return sorted(rolls, reverse=True)
+    keep = n - drop
+    rolls = [die.roll() for die in dice_list]
+    return heapq.nlargest(keep, rolls)
 
 
 def throws(dice: Dice, count: int = 1, roll_modificator: int = 0) -> Generator[int, None, None]:
