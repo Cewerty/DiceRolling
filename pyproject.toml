@@ -27,7 +27,7 @@ dev = [
 ]
 
 [tool.setuptools.package-data]
-diceroller = ["./src/diceroller/py.typed","utils/parser/dice_grammar.lark"]
+diceroller = ["./src/diceroller/py.typed","./utils/parser/dice_grammar.lark"]
 
 [[tool.mypy.overrides]]
 module = "diceroller.*"
