@@ -50,7 +50,7 @@ import heapq
 import operator
 from abc import ABC, abstractmethod
 from collections.abc import Generator, Iterable
-from copy import deepcopy
+from copy import copy, deepcopy
 from dataclasses import dataclass, field, replace
 from typing import Final
 
@@ -457,7 +457,7 @@ class Dice(Diceable):
         else:
             raise DiceOperationTypeError(f"Cannot multiply Dice with {type(other)}")
 
-    def __rmul__(self, other: int | Diceable) -> list[Dice] | int:
+    def __rmul__(self, other: int | Diceable) -> DicePool | int:
         """
         Handle right-side multiplication for integer multipliers.
 
@@ -479,13 +479,68 @@ class Dice(Diceable):
 
         """
         if isinstance(other, int):
-            return [deepcopy(self) for _ in range(other)]
+            return DicePool([copy(self) for _ in range(other)])
         elif isinstance(other, Dice):
             return self.roll() * other.roll()
         elif isinstance(other, DicePool):
             return self.roll() * sum(other.roll())
         else:
             raise DiceOperationTypeError(f"Cannot multiply Dice with {type(other)}")
+
+    def to_dict(self) -> dict[str, int]:
+        """
+        Serialize the Dice instance to a dictionary.
+
+        Returns:
+        -------
+            dict: Dictionary representation with keys:
+                - 'smallest_side': int
+                - 'biggest_side': int
+
+        Example:
+        -------
+            >>> d6 = Dice(1, 6)
+            >>> d6.to_dict()
+            {'smallest_side': 1, 'biggest_side': 6}
+
+        Note:
+        ----
+            Strategy objects are not serialized as they are implementation details
+            and typically not needed in API responses.
+
+        """
+        return {
+            "smallest_side": self._smallest_side,
+            "biggest_side": self._biggest_side,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, int]) -> Dice:
+        """
+        Create a Dice instance from a dictionary.
+
+        Args:
+        ----
+            data: Dictionary with keys 'smallest_side' and 'biggest_side'
+
+        Returns:
+        -------
+            Dice: New Dice instance
+
+        Raises:
+        ------
+            KeyError: If required keys are missing
+            TypeError: If values are not integers
+
+        Example:
+        -------
+            >>> dice_data = {"smallest_side": 1, "biggest_side": 6}
+            >>> d6 = Dice.from_dict(dice_data)
+            >>> isinstance(d6, Dice)
+            True
+
+        """
+        return cls(_smallest_side=data["smallest_side"], _biggest_side=data["biggest_side"])
 
 
 def adv(dices: Dice | Iterable[Dice]) -> int:
@@ -1272,3 +1327,57 @@ class DicePool(Diceable):
             )
 
         return f"DicePool({len(self._dice_list)} dice: [{', '.join(dice_notation)}])"
+
+    def to_dict(self) -> dict[str, list[dict[str, int]]]:
+        """
+        Serialize the DicePool instance to a dictionary.
+
+        Returns:
+        -------
+            dict: Dictionary representation with key:
+                - 'dice': list of serialized Dice dictionaries
+
+        Example:
+        -------
+            >>> from diceroller.aliases import d6, d20
+            >>> pool = DicePool([d6(), d20()])
+            >>> pool_dict = pool.to_dict()
+            >>> len(pool_dict["dice"]) == 2
+            True
+            >>> pool_dict["dice"][0]["biggest_side"] == 6
+            True
+
+        """
+        return {"dice": [die.to_dict() for die in self._dice_list]}
+
+    @classmethod
+    def from_dict(cls, data: dict[str, list[dict[str, int]]]) -> DicePool:
+        """
+        Create a DicePool instance from a dictionary.
+
+        Args:
+        ----
+            data: Dictionary with key 'dice' containing list of Dice dictionaries
+
+        Returns:
+        -------
+            DicePool: New DicePool instance
+
+        Raises:
+        ------
+            KeyError: If required keys are missing
+            TypeError: If values have incorrect types
+
+        Example:
+        -------
+            >>> dice_data = {
+            ...     "dice": [{"smallest_side": 1, "biggest_side": 6},
+            {"smallest_side": 1, "biggest_side": 20}]
+            ... }
+            >>> pool = DicePool.from_dict(dice_data)
+            >>> len(pool) == 2
+            True
+
+        """
+        dice_list = [Dice.from_dict(die_data) for die_data in data["dice"]]
+        return cls(dice_list)
