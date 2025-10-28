@@ -48,6 +48,7 @@ from __future__ import annotations
 import functools
 import heapq
 import operator
+from abc import ABC, abstractmethod
 from collections.abc import Generator, Iterable
 from copy import deepcopy
 from dataclasses import dataclass, field, replace
@@ -69,8 +70,50 @@ from .strategies import (
 )
 
 
+class Diceable(ABC):
+    """Interface for dice-like clasess."""
+
+    @abstractmethod
+    def check_success(self, check: int, inserted_roll_strategy: RollStrategy | None = None) -> bool:
+        """
+        Check success against a target number.
+
+        Args:
+        ----
+            check: Target number to beat
+            inserted_roll_strategy: Optional roll strategy override
+
+        Returns:
+        -------
+            bool: True if roll meets/exceeds target, False otherwise
+
+        """
+        pass
+
+    @abstractmethod
+    def roll(
+        self,
+        modifier: int = 0,
+        inserted_roll_strategy: RollStrategy | None = None,
+    ) -> int | list[int]:
+        """
+        Roll the die with optional modifier.
+
+        Args:
+        ----
+            modifier: Roll modifier to add
+            inserted_roll_strategy: Optional roll strategy override
+
+        Returns:
+        -------
+            int | list[int]: Final roll result
+
+        """
+        pass
+
+
 @dataclass(slots=True, frozen=True)
-class Dice:
+class Dice(Diceable):
     """
     Class for immutable dice.
 
@@ -83,7 +126,7 @@ class Dice:
 
     Raises
     ------
-        ValueError: If smallest side is larger than biggest side or negative
+        DiceInvalidSidesError: If smallest side is larger than biggest side or negative
 
     """
 
@@ -98,7 +141,7 @@ class Dice:
 
         Raises
         ------
-            ValueError: When smallest side is larger than biggest side or negative
+            DiceInvalidSidesError: When smallest side is larger than biggest side or negative
 
         """
         if self.smallest_side >= self.biggest_side or self.smallest_side < 0:
@@ -414,7 +457,7 @@ class Dice:
         else:
             raise DiceOperationTypeError(f"Cannot multiply Dice with {type(other)}")
 
-    def __rmul__(self, other: int | Dice) -> list[Dice]:
+    def __rmul__(self, other: int | Diceable) -> list[Dice] | int:
         """
         Handle right-side multiplication for integer multipliers.
 
@@ -437,6 +480,10 @@ class Dice:
         """
         if isinstance(other, int):
             return [deepcopy(self) for _ in range(other)]
+        elif isinstance(other, Dice):
+            return self.roll() * other.roll()
+        elif isinstance(other, DicePool):
+            return self.roll() * sum(other.roll())
         else:
             raise DiceOperationTypeError(f"Cannot multiply Dice with {type(other)}")
 
@@ -520,8 +567,8 @@ def dis(dices: Dice | Iterable[Dice]) -> int:
     elif not isinstance(dices, Iterable):
         raise DiceOperationTypeError("Item does not implement the Dice interface.")
     for i, item in enumerate(dices):
-        if not isinstance(item, Dice):
-            raise DiceOperationTypeError(f"Item with index {i} does not implement the Dice interface.")
+        if not isinstance(item, Diceable):
+            raise DiceOperationTypeError(f"Item with index {i} does not implement the Diceable interface.")
     return min(die.roll() for _, die in enumerate(dices))
 
 
@@ -529,11 +576,15 @@ def _to_dice_list(dices: Dice | list[Dice]) -> list[Dice]:
     """Help to normalize input to list of Dice."""
     if isinstance(dices, Dice):
         return [dices]
+    elif isinstance(dices, DicePool):
+        return _to_dice_list(dices.dice_list)
+    elif isinstance(dices, list):
+        flat = []
+        for item in dices:
+            flat.extend(_to_dice_list(item))
+        return flat
     if not isinstance(dices, list):
-        raise InvalidDiceInputError("Input must be a Dice or list of Dice.")
-    for i, item in enumerate(dices):
-        if not isinstance(item, Dice):
-            raise InvalidDiceInputError(f"Item at index {i} does not implement the Dice interface.")
+        raise InvalidDiceInputError("Input must be a Dice, DicePool or list of Dice.")
     return dices
 
 
@@ -649,3 +700,411 @@ def throws(dice: Dice, count: int = 1, roll_modificator: int = 0) -> Generator[i
     while count > 0:
         yield dice.roll(modifier=roll_modificator)
         count -= 1
+
+
+def get_rolls(d: Diceable) -> list[int]:
+    """
+    Help to normalize Diceable roll result to a list of integers.
+
+    Ensures that roll() output is always a list, even for single Dice.
+
+    Args:
+    ----
+        d: Diceable instance to roll
+
+    Returns:
+    -------
+        list[int]: List of roll results
+
+    Example:
+    -------
+        >>> from diceroller.aliases import d6
+        >>> dice = d6()
+        >>> get_rolls(dice)
+        [4]
+        >>> pool = DicePool([d6(), d6()])
+        >>> get_rolls(pool)
+        [3, 5]
+
+    """
+    r = d.roll()
+    return r if isinstance(r, list) else [r]
+
+
+class DicePool(Diceable):
+    """
+    Class for mutable dice pools.
+
+    Represents a collection of Dice objects, allowing dynamic addition and removal.
+    Provides a unified interface similar to Dice for rolling and operations.
+
+    Attributes:
+    ----------
+        dice_list (list[Dice]): List of Dice instances in the pool
+
+    Raises:
+    ------
+        InvalidDiceInputError: If invalid items are added during initialization
+
+    Example:
+    -------
+        Creating a pool of three d6 dice::
+
+            >>> from diceroller.aliases import d6
+            >>> pool = DicePool([d6(), d6(), d6()])
+            >>> rolls = pool.roll()
+            >>> len(rolls) == 3
+            True
+
+    Note:
+    ----
+        DicePool is mutable, allowing addition/removal of dice after creation.
+
+    """
+
+    __slots__: tuple[str] = ("dice_list",)
+
+    def __init__(self, dices: list[Dice] | Dice) -> None:
+        """
+        Initialize the dice pool with given dice.
+
+        Args:
+        ----
+            dices: Single Dice or list of Dice to include in the pool
+
+        Raises:
+        ------
+            InvalidDiceInputError: If input contains invalid items
+
+        Example:
+        -------
+            >>> from diceroller.aliases import d6
+            >>> pool = DicePool(d6())  # Single die pool
+            >>> len(pool.dice_list) == 1
+            True
+            >>> pool = DicePool([d6(), d6()])
+            >>> len(pool.dice_list) == 2
+            True
+
+        """
+        self.dice_list = [dice for dice in _to_dice_list(dices)]
+
+    def check_success(self, check: int, inserted_roll_strategy: RollStrategy | None = None) -> bool:
+        """
+        Check success against a target number for the pool sum.
+
+        Rolls all dice in the pool, sums the results, and checks against the target.
+
+        Args:
+        ----
+            check: Target number to beat
+            inserted_roll_strategy: Optional roll strategy override for all dice
+
+        Returns:
+        -------
+            bool: True if sum meets/exceeds target, False otherwise
+
+        """
+        return sum(self.roll(inserted_roll_strategy=inserted_roll_strategy)) >= check
+
+    def roll(
+        self,
+        modifier: int = 0,
+        inserted_roll_strategy: RollStrategy | None = None,
+    ) -> list[int]:
+        """
+        Roll all dice in the pool with optional modifier.
+
+        Args:
+        ----
+            modifier: Roll modifier to add to each die
+            inserted_roll_strategy: Optional roll strategy override for all dice
+
+        Returns:
+        -------
+            list[int]: List of individual roll results with modifier
+
+        """
+        if inserted_roll_strategy is None:
+            return [dice.roll(modifier, inserted_roll_strategy=inserted_roll_strategy) for dice in self.dice_list]
+        return [dice.roll(modifier) for dice in self.dice_list]
+
+    def add_dice(self, added_dice: Dice) -> None:
+        """
+        Add one or more dice to the pool.
+
+        Args:
+        ----
+            added_dice: Single Dice or list of Dice to add
+
+        Raises:
+        ------
+            InvalidDiceInputError: If added items are invalid
+
+        Example:
+        -------
+            >>> from diceroller.aliases import d6
+            >>> pool = DicePool(d6())
+            >>> pool.add_dice(d6())
+            >>> len(pool.dice_list) == 2
+            True
+
+        """
+        self.dice_list.append(added_dice)
+
+    def remove_dice(self, dice_to_remove: Dice) -> None:
+        """
+        Remove specified dice from the pool.
+
+        Removes the first occurrence of the matching dice.
+
+        Args:
+        ----
+            dice_to_remove: Single Diceable or list of Diceable to remove
+
+        Raises:
+        ------
+            ValueError: If item not found in the pool
+            InvalidDiceInputError: If input is invalid
+
+        Example:
+        -------
+            >>> from diceroller.aliases import d6
+            >>> pool = DicePool([d6(), d6()])
+            >>> dice = pool.dice_list[0]
+            >>> pool.remove_dice(dice)
+            >>> len(pool.dice_list) == 1
+            True
+
+        """
+        self.dice_list.remove(dice_to_remove)
+
+    def remove_dice_by_index(self, index_of_dice: int) -> None:
+        """
+        Remove dice from the pool by index.
+
+        Args:
+        ----
+            index_of_dice: Index of the dice to remove (0-based)
+
+        Raises:
+        ------
+            IndexError: If index is out of range
+
+        Example:
+        -------
+            >>> from diceroller.aliases import d6
+            >>> pool = DicePool([d6(), d6()])
+            >>> pool.remove_dice_by_index(0)
+            >>> len(pool.dice_list) == 1
+            True
+
+        """
+        self.dice_list.pop(index_of_dice)
+
+    def __add__(self, other: int | Diceable) -> int | list[int]:
+        """
+        Add an integer modifier or another Diceable to this pool.
+
+        When adding an integer, it acts as a modifier to the pool sum.
+        When adding another Diceable, returns the sum of rolling both.
+
+        Args:
+        ----
+            other: Integer modifier or another Diceable instance
+
+        Returns:
+        -------
+            int: Result of the roll with modifier or sum of rolls
+
+        Raises:
+        ------
+            DiceOperationTypeError: If other is neither int nor Diceable
+
+        Example:
+        -------
+            >>> from diceroller.aliases import d6
+            >>> pool = DicePool([d6(), d6()])
+            >>> pool + 2  # Sum of pool rolls with +2 modifier
+            7
+            >>> pool + d6()  # Sum of pool rolls and another d6 roll
+            9
+
+        """
+        if isinstance(other, int):
+            return self.roll(modifier=other)
+        elif isinstance(other, DicePool):
+            return sum(get_rolls(self) + get_rolls(other))
+        elif isinstance(other, Dice):
+            return other.roll() + sum(get_rolls(self))
+        else:
+            raise DiceOperationTypeError(f"Cannot summarize Dice with {type(other)}")
+
+    def __radd__(self, other: int | Diceable) -> int | list[int]:
+        """
+        Handle right-side addition for integer modifiers or Diceable.
+
+        Enables commutative addition with integers or Diceable (other + pool).
+
+        Args:
+        ----
+            other: Integer modifier or Diceable instance
+
+        Returns:
+        -------
+            int: Result of the roll with modifier or sum of rolls
+
+        Raises:
+        ------
+            DiceOperationTypeError: If other is neither int nor Diceable
+
+        Example:
+        -------
+            >>> from diceroller.aliases import d6
+            >>> pool = DicePool([d6(), d6()])
+            >>> 2 + pool  # Equivalent to pool + 2
+            7
+
+        """
+        if isinstance(other, int):
+            return self.roll(modifier=other)
+        elif isinstance(other, Diceable):
+            return sum(get_rolls(other) + get_rolls(self))
+        else:
+            raise DiceOperationTypeError(f"Cannot summarize Dice with {type(other)}")
+
+    def __sub__(self, other: int | Dice) -> int | list[int]:
+        """
+        Subtract an integer or another Diceable roll from this pool sum.
+
+        Args:
+        ----
+            other: Integer to subtract or Diceable whose roll sum is subtracted
+
+        Returns:
+        -------
+            int: Result of subtraction
+
+        Raises:
+        ------
+            DiceOperationTypeError: If other is neither int nor Diceable
+
+        Example:
+        -------
+            >>> from diceroller.aliases import d6
+            >>> pool = DicePool([d6(), d6()])
+            >>> pool - 2  # Pool sum with -2 modifier
+            3
+            >>> pool - d6()  # Pool sum minus another d6 roll
+            2
+
+        """
+        if isinstance(other, int):
+            return self.roll(modifier=-other)
+        elif isinstance(other, DicePool):
+            return sum(get_rolls(other)) - sum(get_rolls(self))
+        elif isinstance(other, Dice):
+            return other.roll() - sum(get_rolls(self))
+        else:
+            raise DiceOperationTypeError(f"Cannot subtract Dice with {type(other)}")
+
+    def __rsub__(self, other: int | Diceable) -> int:
+        """
+        Handle right-side subtraction (other - pool sum).
+
+        Args:
+        ----
+            other: Integer or Diceable from which pool sum is subtracted
+
+        Returns:
+        -------
+            int: Result of subtraction
+
+        Raises:
+        ------
+            DiceOperationTypeError: If other is neither int nor Diceable
+
+        Example:
+        -------
+            >>> from diceroller.aliases import d6
+            >>> pool = DicePool([d6(), d6()])
+            >>> 10 - pool  # 10 minus pool sum
+            3
+
+        """
+        if isinstance(other, int):
+            return other - sum(self.roll())
+        elif isinstance(other, DicePool):
+            return sum(other.roll()) - sum(self.roll())
+        elif isinstance(other, Dice):
+            return other.roll() - sum(self.roll())
+        else:
+            raise DiceOperationTypeError(f"Cannot subtract Dice with {type(other)}")
+
+    def __mul__(self, other: int | Diceable) -> int:
+        """
+        Multiply the pool sum by an integer or another Diceable roll sum.
+
+        Args:
+        ----
+            other: Integer multiplier or Diceable instance
+
+        Returns:
+        -------
+            int: Multiplied pool sum
+
+        Raises:
+        ------
+            DiceOperationTypeError: If other is neither int nor Diceable
+
+        Example:
+        -------
+            >>> from diceroller.aliases import d6
+            >>> pool = DicePool([d6(), d6()])
+            >>> pool * 2  # Pool sum multiplied by 2
+            10
+            >>> pool * d6()  # Pool sum multiplied by another d6 roll
+            15
+
+        """
+        if isinstance(other, int):
+            return sum(sum(self.roll()) for _ in range(other))
+        elif isinstance(other, DicePool):
+            return sum(get_rolls(other)) * sum(get_rolls(self))
+        elif isinstance(other, Dice):
+            return other.roll() * sum(get_rolls(self))
+        else:
+            raise DiceOperationTypeError(f"Cannot multiply Dice with {type(other)}")
+
+    def __rmul__(self, other: int | Diceable) -> int:
+        """
+        Handle right-side multiplication (other * pool sum).
+
+        Args:
+        ----
+            other: Integer multiplier or Diceable instance
+
+        Returns:
+        -------
+            int: Multiplied pool sum
+
+        Raises:
+        ------
+            DiceOperationTypeError: If other is neither int nor Diceable
+
+        Example:
+        -------
+            >>> from diceroller.aliases import d6
+            >>> pool = DicePool([d6(), d6()])
+            >>> 2 * pool  # Equivalent to pool * 2
+            10
+
+        """
+        if isinstance(other, int):
+            return sum(sum(self.roll()) for _ in range(other))
+        elif isinstance(other, DicePool):
+            return sum(other.roll()) * sum(self.roll())
+        elif isinstance(other, Dice):
+            return other.roll() * sum(self.roll())
+        else:
+            raise DiceOperationTypeError(f"Cannot multiply Dice with {type(other)}")

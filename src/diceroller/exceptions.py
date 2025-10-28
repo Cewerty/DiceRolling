@@ -25,7 +25,7 @@ class DiceOperationTypeError(TypeError):
 
 class InvalidDiceInputError(TypeError):
     """
-    Raised when input to advantage/disadvantage functions isn't Dice or iterable of Dice.
+    Raised when input to functions isn't Dice or iterable of Dice.
 
     For TRPG mechanics like advantage rolls, input must be valid dice.
     """
