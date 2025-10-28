@@ -93,6 +93,7 @@ with DiceContext(d20(), replaced_roll_strategy=AdvantageRoll()) as lucky_d20:
 
 ## Структура проекта
 
+```plain-text
 src/
 ├── diceroller/
 │   ├── dice.py              # Ядро: Dice, DicePool
@@ -103,6 +104,7 @@ src/
 │       └── context_managers/ # Контекстные менеджеры
 tests/                       # Полное покрытие pytest
 docs/                        # Документация Sphinx
+```
 
 ---
 
