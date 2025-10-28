@@ -577,7 +577,7 @@ def _to_dice_list(dices: Dice | list[Dice]) -> list[Dice]:
     if isinstance(dices, Dice):
         return [dices]
     elif isinstance(dices, DicePool):
-        return _to_dice_list(dices.dice_list)
+        return _to_dice_list(dices._dice_list)
     elif isinstance(dices, list):
         flat = []
         for item in dices:
@@ -594,13 +594,13 @@ def kh(dices: Dice | list[Dice], keep: int) -> list[int]:
 
     Returns sorted list of kept rolls (descending). Efficient for large sets using heap.
     """
-    dice_list = _to_dice_list(dices)
-    n = len(dice_list)
+    _dice_list = _to_dice_list(dices)
+    n = len(_dice_list)
     if keep <= 0:
         raise DiceInvalidAmountError(f"Cannot keep non-positive number of dice: {keep}")
     if keep > n:
         raise DiceInvalidAmountError(f"Cannot keep more dice than available: {keep} > {n}")
-    rolls = [die.roll() for die in dice_list]
+    rolls = [die.roll() for die in _dice_list]
     return heapq.nlargest(keep, rolls)
 
 
@@ -610,13 +610,13 @@ def kl(dices: Dice | list[Dice], keep: int) -> list[int]:
 
     Returns sorted list of kept rolls (ascending). Efficient for large sets using heap.
     """
-    dice_list = _to_dice_list(dices)
-    n = len(dice_list)
+    _dice_list = _to_dice_list(dices)
+    n = len(_dice_list)
     if keep <= 0:
         raise DiceInvalidAmountError(f"Cannot keep non-positive number of dice: {keep}")
     if keep > n:
         raise DiceInvalidAmountError(f"Cannot keep more dice than available: {keep} > {n}")
-    rolls = [die.roll() for die in dice_list]
+    rolls = [die.roll() for die in _dice_list]
     return heapq.nsmallest(keep, rolls)
 
 
@@ -626,17 +626,17 @@ def dh(dices: Dice | list[Dice], drop: int) -> list[int]:
 
     Returns sorted list of remaining rolls (ascending). Handles drop=0 (all rolls) and drop=n (empty).
     """
-    dice_list = _to_dice_list(dices)
-    n = len(dice_list)
+    _dice_list = _to_dice_list(dices)
+    n = len(_dice_list)
     if drop < 0:
         raise DiceInvalidAmountError(f"Cannot drop negative number of dice: {drop}")
     if drop > n:
         raise DiceInvalidAmountError(f"Cannot drop more dice than available: {drop} > {n}")
     if drop == 0:
-        rolls = [die.roll() for die in dice_list]
+        rolls = [die.roll() for die in _dice_list]
         return sorted(rolls)
     keep = n - drop
-    rolls = [die.roll() for die in dice_list]
+    rolls = [die.roll() for die in _dice_list]
     return heapq.nsmallest(keep, rolls)
 
 
@@ -646,17 +646,17 @@ def dl(dices: Dice | list[Dice], drop: int) -> list[int]:
 
     Returns sorted list of remaining rolls (descending). Handles drop=0 (all rolls) and drop=n (empty).
     """
-    dice_list = _to_dice_list(dices)
-    n = len(dice_list)
+    _dice_list = _to_dice_list(dices)
+    n = len(_dice_list)
     if drop < 0:
         raise DiceInvalidAmountError(f"Cannot drop negative number of dice: {drop}")
     if drop > n:
         raise DiceInvalidAmountError(f"Cannot drop more dice than available: {drop} > {n}")
     if drop == 0:
-        rolls = [die.roll() for die in dice_list]
+        rolls = [die.roll() for die in _dice_list]
         return sorted(rolls, reverse=True)
     keep = n - drop
-    rolls = [die.roll() for die in dice_list]
+    rolls = [die.roll() for die in _dice_list]
     return heapq.nlargest(keep, rolls)
 
 
@@ -740,7 +740,7 @@ class DicePool(Diceable):
 
     Attributes:
     ----------
-        dice_list (list[Dice]): List of Dice instances in the pool
+        _dice_list (list[Dice]): List of Dice instances in the pool
 
     Raises:
     ------
@@ -762,7 +762,7 @@ class DicePool(Diceable):
 
     """
 
-    __slots__: tuple[str] = ("dice_list",)
+    __slots__: tuple[str] = ("_dice_list",)
 
     def __init__(self, dices: list[Dice] | Dice) -> None:
         """
@@ -780,14 +780,14 @@ class DicePool(Diceable):
         -------
             >>> from diceroller.aliases import d6
             >>> pool = DicePool(d6())  # Single die pool
-            >>> len(pool.dice_list) == 1
+            >>> len(pool._dice_list) == 1
             True
             >>> pool = DicePool([d6(), d6()])
-            >>> len(pool.dice_list) == 2
+            >>> len(pool._dice_list) == 2
             True
 
         """
-        self.dice_list = [dice for dice in _to_dice_list(dices)]
+        self._dice_list = [dice for dice in _to_dice_list(dices)]
 
     def check_success(self, check: int, inserted_roll_strategy: RollStrategy | None = None) -> bool:
         """
@@ -826,8 +826,8 @@ class DicePool(Diceable):
 
         """
         if inserted_roll_strategy is None:
-            return [dice.roll(modifier, inserted_roll_strategy=inserted_roll_strategy) for dice in self.dice_list]
-        return [dice.roll(modifier) for dice in self.dice_list]
+            return [dice.roll(modifier, inserted_roll_strategy=inserted_roll_strategy) for dice in self._dice_list]
+        return [dice.roll(modifier) for dice in self._dice_list]
 
     def add_dice(self, added_dice: Dice) -> None:
         """
@@ -846,11 +846,11 @@ class DicePool(Diceable):
             >>> from diceroller.aliases import d6
             >>> pool = DicePool(d6())
             >>> pool.add_dice(d6())
-            >>> len(pool.dice_list) == 2
+            >>> len(pool._dice_list) == 2
             True
 
         """
-        self.dice_list.append(added_dice)
+        self._dice_list.append(added_dice)
 
     def remove_dice(self, dice_to_remove: Dice) -> None:
         """
@@ -871,13 +871,13 @@ class DicePool(Diceable):
         -------
             >>> from diceroller.aliases import d6
             >>> pool = DicePool([d6(), d6()])
-            >>> dice = pool.dice_list[0]
+            >>> dice = pool._dice_list[0]
             >>> pool.remove_dice(dice)
-            >>> len(pool.dice_list) == 1
+            >>> len(pool._dice_list) == 1
             True
 
         """
-        self.dice_list.remove(dice_to_remove)
+        self._dice_list.remove(dice_to_remove)
 
     def remove_dice_by_index(self, index_of_dice: int) -> None:
         """
@@ -896,11 +896,11 @@ class DicePool(Diceable):
             >>> from diceroller.aliases import d6
             >>> pool = DicePool([d6(), d6()])
             >>> pool.remove_dice_by_index(0)
-            >>> len(pool.dice_list) == 1
+            >>> len(pool._dice_list) == 1
             True
 
         """
-        self.dice_list.pop(index_of_dice)
+        self._dice_list.pop(index_of_dice)
 
     def __add__(self, other: int | Diceable) -> int | list[int]:
         """
