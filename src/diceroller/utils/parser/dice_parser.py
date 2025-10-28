@@ -155,6 +155,7 @@ class DiceTransformer(Transformer[Token, ParsedRoll]):
     def dice_expr(
         self,
         count: Token | None,
+        d_literal: Token,
         sides: Token,
         roll_mod: tuple[str, Token] | None = None,
     ) -> ParsedRoll:
@@ -165,6 +166,7 @@ class DiceTransformer(Transformer[Token, ParsedRoll]):
         ----
             count: Number of dice to roll (None means 1)
             sides: Number of sides on each die
+            d_literal: Number of dice
             roll_mod: Optional roll modifier (e.g., ("keep_highest", "3"))
 
         Returns:
