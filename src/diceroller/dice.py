@@ -36,11 +36,6 @@ Attributes:
     __version__: Module version string
     DEFAULT_SIDES: Default dice configuration (constant)
 
-Todo:
-----
-    * Add serialization support
-    * Implement dice pool functionality
-
 """
 
 from __future__ import annotations
@@ -623,7 +618,7 @@ def dis(dices: Dice | list[Dice]) -> int:
     return min(die.roll() for die in dices)
 
 
-def _to_dice_list(dices: Dice | list[Dice]) -> list[Dice]:
+def _to_dice_list(dices: Diceable | list[Dice]) -> list[Dice]:
     """Help to normalize input to list of Dice."""
     if isinstance(dices, Dice):
         return [dices]
@@ -639,7 +634,7 @@ def _to_dice_list(dices: Dice | list[Dice]) -> list[Dice]:
     return dices
 
 
-def kh(dices: Dice | list[Dice], keep: int) -> list[int]:
+def kh(dices: Dice | list[Dice] | DicePool, keep: int) -> list[int]:
     """
     Keep the highest 'keep' rolls from the dice.
 
@@ -655,7 +650,7 @@ def kh(dices: Dice | list[Dice], keep: int) -> list[int]:
     return heapq.nlargest(keep, rolls)
 
 
-def kl(dices: Dice | list[Dice], keep: int) -> list[int]:
+def kl(dices: Dice | list[Dice] | DicePool, keep: int) -> list[int]:
     """
     Keep the lowest 'keep' rolls from the dice.
 
@@ -671,7 +666,7 @@ def kl(dices: Dice | list[Dice], keep: int) -> list[int]:
     return heapq.nsmallest(keep, rolls)
 
 
-def dh(dices: Dice | list[Dice], drop: int) -> list[int]:
+def dh(dices: Dice | list[Dice] | DicePool, drop: int) -> list[int]:
     """
     Drop the highest 'drop' rolls from the dice (equivalent to keep lowest n-drop).
 
@@ -691,7 +686,7 @@ def dh(dices: Dice | list[Dice], drop: int) -> list[int]:
     return heapq.nsmallest(keep, rolls)
 
 
-def dl(dices: Dice | list[Dice], drop: int) -> list[int]:
+def dl(dices: Dice | list[Dice] | DicePool, drop: int) -> list[int]:
     """
     Drop the lowest 'drop' rolls from the dice (equivalent to keep highest n-drop).
 

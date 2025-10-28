@@ -102,7 +102,7 @@ src/
 │   ├── factories/           # Фабрики кубиков
 │   └── utils/
 │       └── context_managers/ # Контекстные менеджеры
-tests/                       # Полное покрытие pytest
+tests/                       # pytest тесты
 docs/                        # Документация Sphinx
 ```
 

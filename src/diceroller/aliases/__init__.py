@@ -7,3 +7,4 @@ from .dice_aliases import d10 as d10
 from .dice_aliases import d10_percentages as d10_percentages
 from .dice_aliases import d12 as d12
 from .dice_aliases import d20 as d20
+from .dice_pool_aliases import create_dicepool as create_dicepool
