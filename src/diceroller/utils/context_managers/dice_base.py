@@ -5,7 +5,7 @@ from contextlib import AbstractContextManager
 from types import TracebackType
 from typing import Literal
 
-from ...dice import Dice
+from ...dice import Dice, DicePool
 from ...strategies import DefaultRandomStrategy, DefaultRoll, RandomStrategy, RollStrategy
 
 
@@ -102,6 +102,127 @@ class BaseDiceContextManager(AbstractContextManager[Dice], ABC):
 
 class DiceContext(BaseDiceContextManager):
     """Simple dice context manager with no additional behavior."""
+
+    def on_enter(self) -> None:
+        """No-op implementation for context entry."""
+        pass
+
+    def on_exit(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        """
+        No-op implementation for context exit.
+
+        Args:
+        ----
+            exc_type: Exception type if an exception was raised
+            exc_value: Exception value if an exception was raised
+            traceback: Traceback if an exception was raised
+
+        """
+        pass
+
+
+class BaseDicePoolContextManager(AbstractContextManager[DicePool], ABC):
+    """Base context manager for dice pool operations with strategy replacement."""
+
+    def __init__(
+        self,
+        initial_pool: DicePool,
+        replaced_rng_strategy: RandomStrategy | None = None,
+        replaced_roll_strategy: RollStrategy | None = None,
+    ) -> None:
+        """
+        Initialize the context manager with dice pool and optional strategies.
+
+        Args:
+        ----
+            initial_pool: The original dice pool instance to proxy
+            replaced_rng_strategy: Optional RNG strategy to temporarily use for all dice
+            replaced_roll_strategy: Optional roll strategy to temporarily use for all dice
+
+        """
+        self.initial_pool = initial_pool
+        self.temp_rng_strategy = replaced_rng_strategy if replaced_rng_strategy is not None else DefaultRandomStrategy()
+        self.temp_roll_strategy = replaced_roll_strategy if replaced_roll_strategy is not None else DefaultRoll()
+        self.proxy_pool: DicePool | None = None
+
+    def __enter__(self) -> DicePool:
+        """
+        Enter the context and create a proxy dice pool with temporary strategies.
+
+        Returns
+        -------
+            A proxy dice pool instance with all dice using temporary strategies
+
+        """
+        proxy_dice_list = [
+            Dice(
+                die.smallest_side,
+                die.biggest_side,
+                self.temp_rng_strategy,
+                self.temp_roll_strategy,
+            )
+            for die in self.initial_pool
+        ]
+        self.proxy_pool = DicePool(proxy_dice_list)
+        self.on_enter()
+        return self.proxy_pool
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> Literal[False]:
+        """
+        Exit the context and clean up the proxy dice pool.
+
+        Args:
+        ----
+            exc_type: Exception type if an exception was raised
+            exc_value: Exception value if an exception was raised
+            traceback: Traceback if an exception was raised
+
+        Returns:
+        -------
+            False to not suppress any exceptions
+
+        """
+        self.on_exit(exc_type, exc_value, traceback)
+        self.proxy_pool = None
+        return False
+
+    @abstractmethod
+    def on_enter(self) -> None:
+        """Abstract method called when entering the context."""
+        pass
+
+    @abstractmethod
+    def on_exit(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        """
+        Abstract method called when exiting the context.
+
+        Args:
+        ----
+            exc_type: Exception type if an exception was raised
+            exc_value: Exception value if an exception was raised
+            traceback: Traceback if an exception was raised
+
+        """
+        pass
+
+
+class DicePoolContext(BaseDicePoolContextManager):
+    """Simple dice pool context manager with no additional behavior."""
 
     def on_enter(self) -> None:
         """No-op implementation for context entry."""
