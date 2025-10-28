@@ -49,7 +49,7 @@ import functools
 import heapq
 import operator
 from abc import ABC, abstractmethod
-from collections.abc import Generator, Iterable
+from collections.abc import Generator
 from copy import copy, deepcopy
 from dataclasses import dataclass, field, replace
 from typing import Final
@@ -543,7 +543,7 @@ class Dice(Diceable):
         return cls(_smallest_side=data["smallest_side"], _biggest_side=data["biggest_side"])
 
 
-def adv(dices: Dice | Iterable[Dice]) -> int:
+def adv(dices: Dice | list[Dice]) -> int:
     """
     Return the maximum roll result from a collection of dice.
 
@@ -577,15 +577,13 @@ def adv(dices: Dice | Iterable[Dice]) -> int:
     """
     if isinstance(dices, Dice):
         return max(dices.roll(), dices.roll())
-    elif not isinstance(dices, Iterable):
-        raise InvalidDiceInputError("Item does not implement the Dice interface.")
-    for i, item in enumerate(dices):
-        if not isinstance(item, Dice):
-            raise InvalidDiceInputError(f"Item with index {i} does not implement the Dice interface.")
-    return max(die.roll() for _, die in enumerate(dices))
+    dice_list = _to_dice_list(dices)
+    if not dice_list:
+        raise InvalidDiceInputError("Cannot compute advantage on empty dice collection")
+    return max(die.roll() for die in dices)
 
 
-def dis(dices: Dice | Iterable[Dice]) -> int:
+def dis(dices: Dice | list[Dice]) -> int:
     """
     Return the minimum roll result from a collection of dice.
 
@@ -619,12 +617,10 @@ def dis(dices: Dice | Iterable[Dice]) -> int:
     """
     if isinstance(dices, Dice):
         return min(dices.roll(), dices.roll())
-    elif not isinstance(dices, Iterable):
-        raise DiceOperationTypeError("Item does not implement the Dice interface.")
-    for i, item in enumerate(dices):
-        if not isinstance(item, Diceable):
-            raise DiceOperationTypeError(f"Item with index {i} does not implement the Diceable interface.")
-    return min(die.roll() for _, die in enumerate(dices))
+    dice_list = _to_dice_list(dices)
+    if not dice_list:
+        raise InvalidDiceInputError("Cannot compute disadvantage on empty dice collection")
+    return min(die.roll() for die in dices)
 
 
 def _to_dice_list(dices: Dice | list[Dice]) -> list[Dice]:
