@@ -594,13 +594,13 @@ def kh(dices: Dice | list[Dice], keep: int) -> list[int]:
 
     Returns sorted list of kept rolls (descending). Efficient for large sets using heap.
     """
-    _dice_list = _to_dice_list(dices)
-    n = len(_dice_list)
+    dice_list = _to_dice_list(dices)
+    n = len(dice_list)
     if keep <= 0:
         raise DiceInvalidAmountError(f"Cannot keep non-positive number of dice: {keep}")
     if keep > n:
         raise DiceInvalidAmountError(f"Cannot keep more dice than available: {keep} > {n}")
-    rolls = [die.roll() for die in _dice_list]
+    rolls = [die.roll() for die in dice_list]
     return heapq.nlargest(keep, rolls)
 
 
@@ -610,13 +610,13 @@ def kl(dices: Dice | list[Dice], keep: int) -> list[int]:
 
     Returns sorted list of kept rolls (ascending). Efficient for large sets using heap.
     """
-    _dice_list = _to_dice_list(dices)
-    n = len(_dice_list)
+    dice_list = _to_dice_list(dices)
+    n = len(dice_list)
     if keep <= 0:
         raise DiceInvalidAmountError(f"Cannot keep non-positive number of dice: {keep}")
     if keep > n:
         raise DiceInvalidAmountError(f"Cannot keep more dice than available: {keep} > {n}")
-    rolls = [die.roll() for die in _dice_list]
+    rolls = [die.roll() for die in dice_list]
     return heapq.nsmallest(keep, rolls)
 
 
@@ -626,17 +626,17 @@ def dh(dices: Dice | list[Dice], drop: int) -> list[int]:
 
     Returns sorted list of remaining rolls (ascending). Handles drop=0 (all rolls) and drop=n (empty).
     """
-    _dice_list = _to_dice_list(dices)
-    n = len(_dice_list)
+    dice_list = _to_dice_list(dices)
+    n = len(dice_list)
     if drop < 0:
         raise DiceInvalidAmountError(f"Cannot drop negative number of dice: {drop}")
     if drop > n:
         raise DiceInvalidAmountError(f"Cannot drop more dice than available: {drop} > {n}")
     if drop == 0:
-        rolls = [die.roll() for die in _dice_list]
+        rolls = [die.roll() for die in dice_list]
         return sorted(rolls)
     keep = n - drop
-    rolls = [die.roll() for die in _dice_list]
+    rolls = [die.roll() for die in dice_list]
     return heapq.nsmallest(keep, rolls)
 
 
@@ -646,17 +646,17 @@ def dl(dices: Dice | list[Dice], drop: int) -> list[int]:
 
     Returns sorted list of remaining rolls (descending). Handles drop=0 (all rolls) and drop=n (empty).
     """
-    _dice_list = _to_dice_list(dices)
-    n = len(_dice_list)
+    dice_list = _to_dice_list(dices)
+    n = len(dice_list)
     if drop < 0:
         raise DiceInvalidAmountError(f"Cannot drop negative number of dice: {drop}")
     if drop > n:
         raise DiceInvalidAmountError(f"Cannot drop more dice than available: {drop} > {n}")
     if drop == 0:
-        rolls = [die.roll() for die in _dice_list]
+        rolls = [die.roll() for die in dice_list]
         return sorted(rolls, reverse=True)
     keep = n - drop
-    rolls = [die.roll() for die in _dice_list]
+    rolls = [die.roll() for die in dice_list]
     return heapq.nlargest(keep, rolls)
 
 
@@ -1108,3 +1108,167 @@ class DicePool(Diceable):
             return other.roll() * sum(self.roll())
         else:
             raise DiceOperationTypeError(f"Cannot multiply Dice with {type(other)}")
+
+    def __iter__(self) -> Generator[Dice, None, None]:
+        """
+        Iterate over dice in the pool.
+
+        Yields each Dice instance in the pool sequentially.
+
+        Yields:
+        ------
+            Dice: Individual dice from the pool
+
+        Example:
+        -------
+            >>> from diceroller.aliases import d6
+            >>> pool = DicePool([d6(), d6()])
+            >>> for die in pool:
+            ...     isinstance(die, Dice)
+            True
+            True
+
+        """
+        yield from self._dice_list
+
+    def __len__(self) -> int:
+        """
+        Get the number of dice in the pool.
+
+        Returns:
+        -------
+            int: Count of dice in the pool
+
+        Example:
+        -------
+            >>> from diceroller.aliases import d6
+            >>> pool = DicePool([d6(), d6(), d6()])
+            >>> len(pool)
+            3
+
+        """
+        return len(self._dice_list)
+
+    def __getitem__(self, index: int | slice) -> Dice | list[Dice]:
+        """
+        Get dice at specified index or slice.
+
+        Supports both single index access and slicing operations.
+
+        Args:
+        ----
+            index: Position of dice to retrieve (int) or slice range
+
+        Returns:
+        -------
+            Dice | list[Dice]: Single die for int index, list of dice for slices
+
+        Raises:
+        ------
+            IndexError: If index is out of range
+            TypeError: If index is not int or slice
+
+        Examples:
+        --------
+            >>> from diceroller.aliases import d6, d20
+            >>> pool = DicePool([d6(), d20(), d6()])
+            >>> isinstance(pool[0], Dice)
+            True
+            >>> len(pool[1:3])
+            2
+
+        """
+        if isinstance(index, int | slice):
+            return self._dice_list[index]
+        else:
+            raise TypeError(f"Indices must be integers or slices, not {type(index).__name__}")
+
+    def __contains__(self, item: Dice) -> bool:
+        """
+        Check if a specific die exists in the pool.
+
+        Uses identity comparison (is) rather than value equality.
+
+        Args:
+        ----
+            item: Dice instance to check for membership
+
+        Returns:
+        -------
+            bool: True if die exists in pool, False otherwise
+
+        Example:
+        -------
+            >>> from diceroller.aliases import d6
+            >>> die = d6()
+            >>> pool = DicePool([die, d6()])
+            >>> die in pool
+            True
+
+        """
+        return item in self._dice_list
+
+    def __repr__(self) -> str:
+        """
+        Get unambiguous string representation of the dice pool.
+
+        Shows class name and contained dice in a reconstructible format.
+
+        Returns:
+        -------
+            str: Developer-friendly representation
+
+        Example:
+        -------
+            >>> from diceroller.aliases import d6
+            >>> pool = DicePool([d6(), d6()])
+            >>> repr(pool)
+            'DicePool([Dice(_smallest_side=1, _biggest_side=6, ...), Dice(_smallest_side=1, _biggest_side=6, ...)])'
+
+        """
+        dice_reprs = [repr(die) for die in self._dice_list]
+        return f"{self.__class__.__name__}([{', '.join(dice_reprs)}])"
+
+    def __str__(self) -> str:
+        """
+        Get human-readable string representation of the dice pool.
+
+        Shows dice count and side configurations in a compact format.
+
+        Returns:
+        -------
+            str: User-friendly representation
+
+        Example:
+        -------
+            >>> from diceroller.aliases import d6, d20
+            >>> pool = DicePool([d6(), d20(), d6()])
+            >>> str(pool)
+            'DicePool(3 dice: [1d6, 1d20, 1d6])'
+
+        """
+        dice_notation = []
+        current_die = None
+        count = 0
+
+        for die in self._dice_list:
+            if (
+                current_die
+                and die._smallest_side == current_die._smallest_side
+                and die._biggest_side == current_die._biggest_side
+            ):
+                count += 1
+            else:
+                if current_die:
+                    dice_notation.append(
+                        f"{count}d{current_die._biggest_side}" if count > 1 else f"1d{current_die._biggest_side}"
+                    )
+                current_die = die
+                count = 1
+
+        if current_die:
+            dice_notation.append(
+                f"{count}d{current_die._biggest_side}" if count > 1 else f"1d{current_die._biggest_side}"
+            )
+
+        return f"DicePool({len(self._dice_list)} dice: [{', '.join(dice_notation)}])"
