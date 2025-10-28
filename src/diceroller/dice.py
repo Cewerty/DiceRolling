@@ -715,7 +715,7 @@ def dl(dices: Dice | list[Dice], drop: int) -> list[int]:
     return heapq.nlargest(keep, rolls)
 
 
-def throws(dice: Dice, count: int = 1, roll_modificator: int = 0) -> Generator[int, None, None]:
+def throws(dice: Diceable, count: int = 1, roll_modificator: int = 0) -> Generator[int | list[int], None, None]:
     """
     Generate a sequence of dice roll results for a specified number of throws.
 
@@ -748,7 +748,7 @@ def throws(dice: Dice, count: int = 1, roll_modificator: int = 0) -> Generator[i
         [15, 8]
 
     """
-    if not isinstance(dice, Dice):
+    if not isinstance(dice, Diceable):
         raise InvalidDiceError("Provided argument does not implement the Dice interface.")
     if count < 0:
         raise NegativeThrowCountError("Cannot roll a die a negative number of times.")
