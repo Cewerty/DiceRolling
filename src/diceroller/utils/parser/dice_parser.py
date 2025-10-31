@@ -42,11 +42,12 @@ Warning:
 
 Attributes:
 ----------
-    __version__: Module version string (inherited from parent package)
+    version: Module version string (inherited from parent package)
 
 """
+
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 from lark import Lark, Token, Transformer, Tree, v_args
 
@@ -54,7 +55,7 @@ from ...aliases import create_dice
 from ...dice import DicePool, dh, dl, kh, kl
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    pass
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,223 +63,229 @@ class ParsedRoll:
     """
     Result of parsing a DnD5 dice notation string.
 
-    Contains the dice pool representing the dice expression
-    and an integer modifier (e.g., +3 in "2d6+3").
-
     Attributes
     ----------
-        result (DicePool): Dice pool constructed from the notation
-        modifier (int): Numeric modifier to apply to the roll result
+        result (DicePool): The parsed dice pool object.
+        modifier (int): The numeric modifier to apply to the roll.
 
     """
 
-    result: DicePool
+    result: DicePool | list[int]
     modifier: int
 
 
-class DiceTransformer(Transformer[Token, ParsedRoll]):
-    """Lark transformer that converts parsed AST into diceroller objects."""
+class DiceTransformationEngine:
+    """
+    Handles transformation logic for parsed dice expressions.
 
-    @v_args(inline=True)
-    def start(self, expr: ParsedRoll) -> ParsedRoll:
+    This class encapsulates the business logic for transforming parsed
+    dice notation into DicePool objects with appropriate modifiers.
+    It separates concerns from the Lark Transformer pattern.
+    """
+
+    def process_start(self, expr: ParsedRoll) -> ParsedRoll:
         """
-        Return the top-level expression result.
+        Process the start rule of the grammar.
 
         Args:
         ----
-            expr: Fully processed parsed roll expression
+            expr (ParsedRoll): The parsed expression from the grammar.
 
         Returns:
         -------
-            The final parsed roll result
+            ParsedRoll: The same expression, passed through unchanged.
 
         """
         return expr
 
-    @v_args(inline=True)
-    def expr(self, first_term: ParsedRoll, *args: Any) -> ParsedRoll:  # noqa: ANN401
+    def process_expr(self, first_term: ParsedRoll, *args: Any) -> ParsedRoll:  # noqa: ANN401
         """
-        Process arithmetic expressions with dice pools and modifiers.
+        Process expressions with operators (+ and -).
 
-        Handles expressions like "2d6 + 3" or "4d6kh3 - 1".
+        Combines multiple dice pools and modifiers based on operators.
+        Addition merges dice pools and adds modifiers. Subtraction is only
+        allowed for numeric modifiers, not dice pools.
 
         Args:
         ----
-            first_term: The first term in the expression (always a ParsedRoll)
-            *args: Alternating sequence of operators and terms
+            first_term (ParsedRoll): The first term in the expression.
+            *args (Any): Alternating operators and terms (op1, term1, op2, term2, ...).
 
         Returns:
         -------
-            Combined ParsedRoll with aggregated dice pool and modifier
+            ParsedRoll: Combined result with merged pools and modifiers.
 
         Raises:
         ------
-            ValueError: If attempting to subtract dice pools (not allowed in DnD5)
+            ValueError: If attempting to subtract a dice pool (only modifiers allowed).
+
+        Example:
+        -------
+            >>> # Represents: 2d6 + 3 - 1
+            >>> # args would be ["+", term_3, "-", term_1]
 
         """
         pool = first_term.result
         modifier = first_term.modifier
 
-        # Process operator-term pairs: ("+", term2, "-", term3, ...)
-        it: Iterator[Any] = iter(args)
-        for op, term in zip(it, it, strict=False):
+        for i in range(0, len(args), 2):
+            if i + 1 >= len(args):
+                break
+
+            op = args[i]
+            term = args[i + 1]
+
             if op == "+":
-                pool._dice_list.extend(term.result._dice_list)
+                if isinstance(term.result, DicePool):
+                    pool._dice_list.extend(term.result._dice_list)  # type: ignore
                 modifier += term.modifier
             elif op == "-":
-                if len(term.result) > 0:
-                    raise ValueError("Subtracting dice pools is not allowed in DnD5 notation")
+                if isinstance(term.result, DicePool) and len(term.result._dice_list) > 0:
+                    raise ValueError("Subtracting dice pools is not allowed")
                 modifier -= term.modifier
 
         return ParsedRoll(pool, modifier)
 
-    @v_args(inline=True)
-    def term(self, item: ParsedRoll | Token) -> ParsedRoll:
+    def process_term(self, item: ParsedRoll | Token) -> ParsedRoll:
         """
-        Process individual terms (dice expressions or modifiers).
+        Process a single term (either dice expression or number).
 
         Args:
         ----
-            item: Either a parsed dice expression or integer modifier token
+            item (ParsedRoll | Token): Either a ParsedRoll (from dice_expr)
+                or a Token representing a numeric literal.
 
         Returns:
         -------
-            ParsedRoll with either dice pool or modifier
+            ParsedRoll: Wrapped term as ParsedRoll. Numbers become modifiers
+                with empty pools.
 
         """
         if isinstance(item, ParsedRoll):
             return item
-        else:  # int modifier
-            return ParsedRoll(DicePool([]), int(item))
+        return ParsedRoll(DicePool([]), int(item))
 
-    @v_args(inline=True)
-    def dice_expr(
+    def process_dice_expr(
         self,
         count: Token | None,
-        d_literal: Token,
         sides: Token,
-        roll_mod: tuple[str, Token] | None = None,
+        roll_mods: list | None = None,
     ) -> ParsedRoll:
         """
-        Process dice expressions like "2d6" or "4d6kh3".
+        Process dice expressions with optional roll modifiers.
+
+        Transforms notation like "4d6kh3" into a DicePool with
+        appropriate keep/drop modifiers applied.
 
         Args:
         ----
-            count: Number of dice to roll (None means 1)
-            sides: Number of sides on each die
-            d_literal: Number of dice
-            roll_mod: Optional roll modifier (e.g., ("keep_highest", "3"))
+            count (Token | None): Number of dice to roll. Defaults to 1 if None.
+            sides (Token): Number of sides on each die.
+            roll_mods (list | None, optinal): Tuple of (modifier_type, count)
+                where modifier_type is one of: "keep_highest", "keep_lowest",
+                "drop_highest", "drop_lowest". Defaults to None.
 
         Returns:
         -------
-            ParsedRoll containing the constructed dice pool and zero modifier
+            ParsedRoll: DicePool with modifiers applied and zero modifier value.
+
+        Raises:
+        ------
+            ValueError: If modifier type is not recognized.
+
+        Example:
+        -------
+            >>> # Input: count=4, sides=6, roll_mod=("keep_highest", "3")
+            >>> # Output: ParsedRoll(DicePool([d6, d6, d6, d6]) modified by kh(3))
 
         """
         count_val = 1 if count is None else int(count)
         sides_val = int(sides)
+
         base_pool = DicePool([create_dice(biggest_side=sides_val) for _ in range(count_val)])
 
-        if roll_mod is None:
+        if not roll_mods:
             return ParsedRoll(base_pool, 0)
 
-        mod_type, mod_value = roll_mod
-        mod_value_int = int(mod_value)
-        if mod_type == "keep_highest":
-            kept_rolls = kh(base_pool, mod_value_int)
-        elif mod_type == "keep_lowest":
-            kept_rolls = kl(base_pool, mod_value_int)
-        elif mod_type == "drop_highest":
-            kept_rolls = dh(base_pool, mod_value_int)
-        elif mod_type == "drop_lowest":
-            kept_rolls = dl(base_pool, mod_value_int)
-        else:
-            raise ValueError(f"Unknown roll modifier: {mod_type}")
+        modifier_map = {
+            "keep_highest": kh,
+            "keep_lowest": kl,
+            "drop_highest": dh,
+            "drop_lowest": dl,
+        }
 
-        new_pool = DicePool([create_dice(biggest_side=sides_val) for _ in kept_rolls])
-        return ParsedRoll(new_pool, 0)
+        result_pool: DicePool | list[int] = base_pool
+        for mod in roll_mods:
+            if isinstance(mod, Tree):
+                mod_type = mod.data
+                mod_value = int(mod.children[0])  # type: ignore
+            else:
+                mod_type, mod_value = mod
 
-    def modifier(self, items: list[Token]) -> int:
+            if mod_type not in modifier_map:
+                raise ValueError(f"Unknown roll modifier: {mod_type}")
+
+            result_pool = modifier_map[mod_type](result_pool, mod_value)  # type: ignore
+
+        return ParsedRoll(result_pool, 0)
+
+
+class DiceTransformer(Transformer[Token, ParsedRoll]):
+    """Lark transformer using composition for transformation logic."""
+
+    def __init__(self) -> None:
+        """Initialize the transformer and its engine."""
+        super().__init__()
+        self.engine = DiceTransformationEngine()
+
+    @v_args(inline=True)
+    def start(self, expr: ParsedRoll) -> ParsedRoll:
+        """Transform the start rule."""
+        return self.engine.process_start(expr)
+
+    @v_args(inline=True)
+    def expr(self, first_term: ParsedRoll, *args: Any) -> ParsedRoll:  # noqa: ANN401
+        """Transform expressions with operators."""
+        return self.engine.process_expr(first_term, *args)
+
+    @v_args(inline=True)
+    def term(self, item: ParsedRoll | Token) -> ParsedRoll:
+        """Transform a single term."""
+        return self.engine.process_term(item)
+
+    def dice_expr(self, args: Any) -> ParsedRoll:  # noqa: ANN401
         """
-        Convert modifier token to integer.
+        Transform dice expressions WITHOUT inline=True.
 
-        Args:
-        ----
-            items: List containing a single integer token
-
-        Returns:
-        -------
-            Integer value of the modifier
-
+        Handles variable argument count including optional count parameter.
         """
-        return int(items[0])
+        count = None
+        sides = None
+        roll_mods = []
 
-    def keep_highest(self, items: list[Token]) -> tuple[Literal["keep_highest"], Token]:
-        """
-        Handle 'kh' (keep highest) roll modifier.
+        idx = 0
 
-        Args:
-        ----
-            items: List containing the keep count token
+        if isinstance(args[0], Token) and idx < len(args):
+            if len(args) > 1:
+                count = args[0]
+                idx = 1
+            else:
+                sides = args[0]
+                idx = 1
 
-        Returns:
-        -------
-            Tuple indicating modifier type and count
+        if idx < len(args):
+            sides = args[idx]
+            idx += 1
 
-        """
-        return ("keep_highest", items[0])
+        roll_mods = args[idx:]
 
-    def keep_lowest(self, items: list[Token]) -> tuple[Literal["keep_lowest"], Token]:
-        """
-        Handle 'kl' (keep lowest) roll modifier.
-
-        Args:
-        ----
-            items: List containing the keep count token
-
-        Returns:
-        -------
-            Tuple indicating modifier type and count
-
-        """
-        return ("keep_lowest", items[0])
-
-    def drop_highest(self, items: list[Token]) -> tuple[Literal["drop_highest"], Token]:
-        """
-        Handle 'dh' (drop highest) roll modifier.
-
-        Args:
-        ----
-            items: List containing the drop count token
-
-        Returns:
-        -------
-            Tuple indicating modifier type and count
-
-        """
-        return ("drop_highest", items[0])
-
-    def drop_lowest(self, items: list[Token]) -> tuple[Literal["drop_lowest"], Token]:
-        """
-        Handle 'dl' (drop lowest) roll modifier.
-
-        Args:
-        ----
-            items: List containing the drop count token
-
-        Returns:
-        -------
-            Tuple indicating modifier type and count
-
-        """
-        return ("drop_lowest", items[0])
+        return self.engine.process_dice_expr(count, sides, roll_mods)  # type: ignore
 
 
-# Global LALR parser instance with built-in transformer
 _PARSER = Lark.open(
     "dice_grammar.lark",
     rel_to=__file__,
     parser="lalr",
-    transformer=DiceTransformer(),
 )
 
 
@@ -286,33 +293,39 @@ def parse_dice_notation(notation: str) -> ParsedRoll:
     """
     Parse DnD5-style dice notation into structured roll objects.
 
-    Supports standard DnD5 notation patterns including:
-        - "d20"         → Single d20 die
-        - "2d6+3"       → Two d6 dice with +3 modifier
-        - "4d6kh3"      → Four d6 dice, keep 3 highest
-        - "2d20dl1"     → Two d20 dice, drop 1 lowest
+    Converts human-readable dice notation strings into DicePool objects
+    compatible with the diceroller library. Supports standard DnD5 syntax
+    including dice rolls, modifiers, and roll modifications.
 
     Args:
     ----
-        notation: DnD5 dice notation string (e.g., "2d6+1")
+        notation (str): Dice notation string to parse. Examples:
+            - "2d6" - Roll 2 six-sided dice
+            - "2d6+3" - Roll 2 six-sided dice and add 3
+            - "4d6kh3" - Roll 4 six-sided dice, keep highest 3
+            - "2d20-d8+5" - Complex expression (modifiers must be after dice)
 
     Returns:
     -------
-        ParsedRoll: Structured result containing dice pool and modifier
+        ParsedRoll: Object containing:
+            - result: DicePool object ready for rolling
+            - modifier: Numeric modifier to apply to the final roll
 
     Raises:
     ------
-        ValueError: For invalid notation (e.g., subtracting dice pools)
-        lark.exceptions.LarkError: For syntax errors in notation
+        ValueError: If notation violates DnD5 grammar or contains
+            unsupported operations (e.g., "2d6 - d4").
+        lark.LarkError: If notation is syntactically invalid.
 
-    Examples:
-    --------
-        >>> parse_dice_notation("2d6+3")
-        ParsedRoll(result=DicePool([...]), modifier=3)
-        >>> parse_dice_notation("4d6kh3")
-        ParsedRoll(result=DicePool([...]), modifier=0)
+    Example:
+    -------
+        >>> result = parse_dice_notation("2d6+3")
+        >>> isinstance(result, ParsedRoll)
+        True
+        >>> result.modifier
+        3
 
     """
     tree: Tree[Token] = _PARSER.parse(notation)
-    transformer = DiceTransformer()
+    transformer: DiceTransformer = DiceTransformer()
     return transformer.transform(tree)

@@ -4,12 +4,12 @@
 
 start: expr
 
-?expr: term (("+" | "-") term)*
+?expr: term ((("+" | "-") term))*
 
 ?term: dice_expr
      | INT -> modifier
 
-dice_expr: INT? "d" INT roll_modifier?
+dice_expr: INT? "d" INT roll_modifier*
 
 roll_modifier: "kh" INT -> keep_highest
              | "kl" INT -> keep_lowest
