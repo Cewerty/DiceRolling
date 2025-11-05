@@ -9,7 +9,7 @@ name = "diceroller"
 version = "0.3.3"
 description = "Library for TRPG's dices"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = "<=3.12"
 dependencies = [
     "lark>=1.3.1",
 ]
