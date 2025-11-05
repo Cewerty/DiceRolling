@@ -1,17 +1,23 @@
-%import common.INT
-%import common.WS
-%ignore WS
+    %import common.INT
+    %import common.WS
+    %ignore WS
 
-start: expr
+    start: expr
 
-?expr: term ((("+" | "-") term))*
+    ?expr: term (operator term)*
 
-?term: dice_expr
-     | INT -> modifier
+    operator: "+" -> add
+            | "-" -> sub
 
-dice_expr: INT? "d" INT roll_modifier*
+    ?term: dice_expr
+         | INT -> modifier
 
-roll_modifier: "kh" INT -> keep_highest
-             | "kl" INT -> keep_lowest
-             | "dh" INT -> drop_highest
-             | "dl" INT -> drop_lowest
+    ?dice_expr: count? "d" sides roll_modifier*
+
+    count: INT
+    sides: INT
+
+    roll_modifier: "kh" INT? -> keep_highest
+                 | "kl" INT? -> keep_lowest
+                 | "dh" INT? -> drop_highest
+                 | "dl" INT? -> drop_lowest
