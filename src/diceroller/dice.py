@@ -851,7 +851,17 @@ class DicePool(Diceable):
             bool: True if sum meets/exceeds target, False otherwise
 
         """
-        return sum(self.roll(inserted_roll_strategy=inserted_roll_strategy)) >= check
+        return self._roll_total(inserted_roll_strategy=inserted_roll_strategy) >= check
+
+    def _roll_values(self, inserted_roll_strategy: RollStrategy | None = None) -> list[int]:
+        """Roll all dice in the pool and return individual values."""
+        if inserted_roll_strategy is None:
+            return [dice.roll() for dice in self._dice_list]
+        return [dice.roll(inserted_roll_strategy=inserted_roll_strategy) for dice in self._dice_list]
+
+    def _roll_total(self, modifier: int = 0, inserted_roll_strategy: RollStrategy | None = None) -> int:
+        """Roll the pool and return its total with a single pool-level modifier."""
+        return sum(self._roll_values(inserted_roll_strategy=inserted_roll_strategy)) + modifier
 
     def roll(
         self,
@@ -859,21 +869,19 @@ class DicePool(Diceable):
         inserted_roll_strategy: RollStrategy | None = None,
     ) -> list[int]:
         """
-        Roll all dice in the pool with optional modifier.
+        Roll all dice in the pool and return raw die values.
 
         Args:
         ----
-            modifier: Roll modifier to add to each die
+            modifier: Reserved for API compatibility (not applied to individual dice)
             inserted_roll_strategy: Optional roll strategy override for all dice
 
         Returns:
         -------
-            list[int]: List of individual roll results with modifier
+            list[int]: List of individual raw roll results
 
         """
-        if inserted_roll_strategy is None:
-            return [dice.roll(modifier, inserted_roll_strategy=inserted_roll_strategy) for dice in self._dice_list]
-        return [dice.roll(modifier) for dice in self._dice_list]
+        return self._roll_values(inserted_roll_strategy=inserted_roll_strategy)
 
     def add_dice(self, added_dice: Dice) -> None:
         """
@@ -978,7 +986,7 @@ class DicePool(Diceable):
 
         """
         if isinstance(other, int):
-            return self.roll(modifier=other)
+            return self._roll_total(modifier=other)
         elif isinstance(other, DicePool):
             return sum(get_rolls(self) + get_rolls(other))
         elif isinstance(other, Dice):
@@ -1013,7 +1021,7 @@ class DicePool(Diceable):
 
         """
         if isinstance(other, int):
-            return self.roll(modifier=other)
+            return self._roll_total(modifier=other)
         elif isinstance(other, Diceable):
             return sum(get_rolls(other) + get_rolls(self))
         else:
@@ -1046,11 +1054,11 @@ class DicePool(Diceable):
 
         """
         if isinstance(other, int):
-            return self.roll(modifier=-other)
+            return self._roll_total(modifier=-other)
         elif isinstance(other, DicePool):
-            return sum(get_rolls(other)) - sum(get_rolls(self))
+            return sum(get_rolls(self)) - sum(get_rolls(other))
         elif isinstance(other, Dice):
-            return other.roll() - sum(get_rolls(self))
+            return sum(get_rolls(self)) - other.roll()
         else:
             raise DiceOperationTypeError(f"Cannot subtract Dice with {type(other)}")
 
@@ -1114,7 +1122,7 @@ class DicePool(Diceable):
 
         """
         if isinstance(other, int):
-            return sum(sum(self.roll()) for _ in range(other))
+            return sum(self._roll_total() for _ in range(other))
         elif isinstance(other, DicePool):
             return sum(get_rolls(other)) * sum(get_rolls(self))
         elif isinstance(other, Dice):
@@ -1147,7 +1155,7 @@ class DicePool(Diceable):
 
         """
         if isinstance(other, int):
-            return sum(sum(self.roll()) for _ in range(other))
+            return sum(self._roll_total() for _ in range(other))
         elif isinstance(other, DicePool):
             return sum(other.roll()) * sum(self.roll())
         elif isinstance(other, Dice):

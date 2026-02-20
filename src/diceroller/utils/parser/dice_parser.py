@@ -16,10 +16,10 @@ Example:
 
         >>> from diceroller.utils.parser import parse_dice_notation
         >>> result = parse_dice_notation("2d6+3")
-        >>> rolls = result.result.roll(modifier=result.modifier)
+        >>> rolls = result.result.roll()
         >>> len(rolls) == 2
         True
-        >>> sum(rolls) >= 5  # Minimum possible: 1+1+3 = 5
+        >>> (sum(rolls) + result.modifier) >= 5  # Minimum possible: 1+1+3 = 5
         True
 
     Using roll modifiers like keep highest::
